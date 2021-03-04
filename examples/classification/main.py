@@ -51,7 +51,8 @@ from nncf.api.compression import CompressionLevel
 from nncf.dynamic_graph.graph_tracer import create_input_infos
 from nncf.initialization import register_default_init_args, default_criterion_fn
 from nncf.utils import safe_thread_call, is_main_process
-from examples.classification.common import set_seed, load_resuming_checkpoint
+from examples.classification.common import load_resuming_checkpoint
+from examples.common.execution import set_seed
 
 model_names = sorted(name for name in models.__dict__
                      if name.islower() and not name.startswith("__")
@@ -355,11 +356,16 @@ def create_data_loaders(config, train_dataset, val_dataset):
 
     train_sampler = None
     if config.distributed:
-        train_sampler = torch.utils.data.distributed.DistributedSampler(train_dataset)
+        sampler_seed = 0 if config.seed is None else config.seed
+        dist_sampler_shuffle = config.seed is None
+        train_sampler = torch.utils.data.distributed.DistributedSampler(train_dataset,
+                                                                        seed=sampler_seed,
+                                                                        shuffle=dist_sampler_shuffle)
 
+    train_shuffle = train_sampler is None and config.seed is None
     def create_train_data_loader(batch_size_):
         return torch.utils.data.DataLoader(
-            train_dataset, batch_size=batch_size_, shuffle=(train_sampler is None),
+            train_dataset, batch_size=batch_size_, shuffle=train_shuffle,
             num_workers=workers, pin_memory=pin_memory, sampler=train_sampler, drop_last=True)
 
     train_loader = create_train_data_loader(batch_size)
@@ -552,8 +558,8 @@ def accuracy(output, target, topk=(1,)):
 
         res = []
         for k in topk:
-            correct_k = correct[:k].reshape(-1).float().sum(0, keepdim=True)
-            res.append(correct_k.mul_(100.0 / batch_size).item())
+            correct_k = correct[:k].reshape(-1).sum(0, keepdim=True)
+            res.append(correct_k.float().mul_(100.0 / batch_size).item())
         return res
 
 

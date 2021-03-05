@@ -29,12 +29,10 @@ from abc import abstractmethod
 from copy import deepcopy
 from functools import partial
 
-from nncf.dynamic_graph.context import TracingContext
-from nncf.dynamic_graph.version_agnostic_op_names import get_version_agnostic_name
-
 from nncf.common.graph.transformations.commands import TargetType
 from nncf import nncf_model_input
 from nncf.composite_compression import PTCompositeCompressionAlgorithmBuilder
+from nncf.dynamic_graph.context import TracingContext
 from nncf.dynamic_graph.graph import InputAgnosticOperationExecutionContext
 from nncf.dynamic_graph.graph import NNCFGraph
 from nncf.dynamic_graph.graph_builder import GraphBuilder
@@ -83,27 +81,6 @@ def get_basic_quantization_config_with_hw_config_type(hw_config_type, input_samp
     return config
 
 
-def get_version_agnostic_graph(nx_graph):
-    done = False
-    while not done:
-        counter = 0
-        for node_name, node_data in nx_graph.nodes().data():
-            version_specific_name = node_data["type"]
-            version_agnostic_name = get_version_agnostic_name(version_specific_name)
-            if version_agnostic_name != version_specific_name:
-                node_data["type"] = version_agnostic_name
-                mapping = dict(zip(nx_graph, nx_graph))  # identity mapping
-                new_node_name = node_name.replace(version_specific_name, version_agnostic_name)
-                mapping[node_name] = new_node_name
-                nx_graph = nx.relabel_nodes(nx_graph, mapping, copy=False)
-                break  # Looks like iterators will be invalidated after relabel_nodes
-            counter += 1
-        if counter == len(nx_graph.nodes().data()):
-            done = True
-
-    return nx_graph
-
-
 def sort_dot(path):
     with open(path, 'r') as f:
         content = f.readlines()
@@ -146,7 +123,6 @@ def check_nx_graph(nx_graph: nx.DiGraph, path_to_dot, graph_dir, sort_dot_graph=
             sort_dot(path_to_dot)
 
     load_graph = nx.drawing.nx_pydot.read_dot(path_to_dot)
-    load_graph = get_version_agnostic_graph(load_graph)
 
     # nx_graph is expected to have version-agnostic operator names already
     for k, attrs in nx_graph.nodes.items():

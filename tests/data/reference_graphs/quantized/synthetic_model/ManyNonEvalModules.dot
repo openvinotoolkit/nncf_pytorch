@@ -12,7 +12,7 @@ strict digraph  {
 "10 ManyNonEvalModules/ModuleWithMixedModules[mixed_modules]/NNCFLinear[called_linear]/linear" [id=10, scope="ManyNonEvalModules/ModuleWithMixedModules[mixed_modules]/NNCFLinear[called_linear]", type=linear];
 "11 ManyNonEvalModules/AuxBranch[aux_branch]/linear" [id=11, scope="ManyNonEvalModules/AuxBranch[aux_branch]", type=linear];
 "12 ManyNonEvalModules/AuxBranch[aux_branch]/Linear[linear]/linear" [id=12, scope="ManyNonEvalModules/AuxBranch[aux_branch]/Linear[linear]", type=linear];
-"13 ManyNonEvalModules/AuxBranch[aux_branch]/RELU" [id=13, scope="ManyNonEvalModules/AuxBranch[aux_branch]", type=RELU];
+"13 ManyNonEvalModules/AuxBranch[aux_branch]/relu" [id=13, scope="ManyNonEvalModules/AuxBranch[aux_branch]", type=relu];
 "0 /nncf_model_input" -> "1 SymmetricQuantizer/symmetric_quantize";
 "1 SymmetricQuantizer/symmetric_quantize" -> "2 ManyNonEvalModules/AvgPool2d[avg_pool]/avg_pool2d";
 "2 ManyNonEvalModules/AvgPool2d[avg_pool]/avg_pool2d" -> "3 ManyNonEvalModules/AvgPool2d[avg_pool]/SymmetricQuantizer/symmetric_quantize";
@@ -25,5 +25,5 @@ strict digraph  {
 "8 ManyNonEvalModules/ModuleWithMixedModules[mixed_modules]/Dropout/dropout" -> "10 ManyNonEvalModules/ModuleWithMixedModules[mixed_modules]/NNCFLinear[called_linear]/linear";
 "9 ManyNonEvalModules/ModuleWithMixedModules[mixed_modules]/NNCFLinear[called_linear]/ModuleDict[pre_ops]/UpdateWeight[0]/SymmetricQuantizer[op]/symmetric_quantize" -> "10 ManyNonEvalModules/ModuleWithMixedModules[mixed_modules]/NNCFLinear[called_linear]/linear";
 "11 ManyNonEvalModules/AuxBranch[aux_branch]/linear" -> "12 ManyNonEvalModules/AuxBranch[aux_branch]/Linear[linear]/linear";
-"12 ManyNonEvalModules/AuxBranch[aux_branch]/Linear[linear]/linear" -> "13 ManyNonEvalModules/AuxBranch[aux_branch]/RELU";
+"12 ManyNonEvalModules/AuxBranch[aux_branch]/Linear[linear]/linear" -> "13 ManyNonEvalModules/AuxBranch[aux_branch]/relu";
 }

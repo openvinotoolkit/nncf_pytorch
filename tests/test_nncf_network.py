@@ -29,7 +29,6 @@ from nncf.dynamic_graph.graph_builder import ModelInputInfo, GraphBuilder
 from nncf.dynamic_graph.operator_metatypes import NoopMetatype
 from nncf.dynamic_graph.input_wrapping import MODEL_INPUT_OP_NAME
 from nncf.dynamic_graph.transformations.layout import PTTransformationLayout
-from nncf.dynamic_graph.version_agnostic_op_names import VersionAgnosticNames
 from nncf.layer_utils import _NNCFModuleMixin
 from nncf.module_operations import BaseOp
 from nncf.nncf_network import NNCFNetwork, InsertionPointGraph, InsertionPointGraphNodeType
@@ -391,14 +390,14 @@ def get_mock_model_graph_with_mergeable_pattern() -> nx.DiGraph:
     #    |
     #   (B)
 
-    node_keys = ['conv2d', 'batch_norm', VersionAgnosticNames.RELU, 'A', 'B']
+    node_keys = ['conv2d', 'batch_norm', 'relu', 'A', 'B']
     for node_key in node_keys:
         mock_graph.add_node(node_key, **get_mock_nncf_node_attrs(op_name=node_key))
 
     mock_graph.add_edges_from([('A', 'conv2d', {NNCFGraph.IN_PORT_NAME_EDGE_ATTR: 0}),
                                ('conv2d', 'batch_norm', {NNCFGraph.IN_PORT_NAME_EDGE_ATTR: 0}),
-                               ('batch_norm', VersionAgnosticNames.RELU, {NNCFGraph.IN_PORT_NAME_EDGE_ATTR: 0}),
-                               (VersionAgnosticNames.RELU, 'B', {NNCFGraph.IN_PORT_NAME_EDGE_ATTR: 0})])
+                               ('batch_norm', 'relu', {NNCFGraph.IN_PORT_NAME_EDGE_ATTR: 0}),
+                               ('relu', 'B', {NNCFGraph.IN_PORT_NAME_EDGE_ATTR: 0})])
     return mock_graph
 
 
@@ -419,7 +418,7 @@ def get_mock_model_graph_with_no_mergeable_pattern() -> nx.DiGraph:
     #    |
     #   (B)
 
-    node_keys = ['conv2d', 'batch_norm', VersionAgnosticNames.RELU, 'A', 'B', 'C', 'D']
+    node_keys = ['conv2d', 'batch_norm', 'relu', 'A', 'B', 'C', 'D']
     for node_key in node_keys:
         mock_graph.add_node(node_key, **get_mock_nncf_node_attrs(op_name=node_key))
 
@@ -427,8 +426,8 @@ def get_mock_model_graph_with_no_mergeable_pattern() -> nx.DiGraph:
                                ('conv2d', 'C', {NNCFGraph.IN_PORT_NAME_EDGE_ATTR: 0}),
                                ('C', 'batch_norm', {NNCFGraph.IN_PORT_NAME_EDGE_ATTR: 0}),
                                ('batch_norm', 'D', {NNCFGraph.IN_PORT_NAME_EDGE_ATTR: 0}),
-                               ('D', VersionAgnosticNames.RELU, {NNCFGraph.IN_PORT_NAME_EDGE_ATTR: 0}),
-                               (VersionAgnosticNames.RELU, 'B', {NNCFGraph.IN_PORT_NAME_EDGE_ATTR: 0})])
+                               ('D', 'relu', {NNCFGraph.IN_PORT_NAME_EDGE_ATTR: 0}),
+                               ('relu', 'B', {NNCFGraph.IN_PORT_NAME_EDGE_ATTR: 0})])
     return mock_graph
 
 
@@ -447,15 +446,15 @@ def get_mock_model_graph_with_broken_output_edge_pattern() -> nx.DiGraph:
     #    |
     #   (B)
 
-    node_keys = ['conv2d', 'batch_norm', VersionAgnosticNames.RELU, 'A', 'B', 'C']
+    node_keys = ['conv2d', 'batch_norm', 'relu', 'A', 'B', 'C']
     for node_key in node_keys:
         mock_graph.add_node(node_key, **get_mock_nncf_node_attrs(op_name=node_key))
 
     mock_graph.add_edges_from([('A', 'conv2d', {NNCFGraph.IN_PORT_NAME_EDGE_ATTR: 0}),
                                ('conv2d', 'batch_norm', {NNCFGraph.IN_PORT_NAME_EDGE_ATTR: 0}),
                                ('conv2d', 'C', {NNCFGraph.IN_PORT_NAME_EDGE_ATTR: 1}),
-                               ('batch_norm', VersionAgnosticNames.RELU, {NNCFGraph.IN_PORT_NAME_EDGE_ATTR: 0}),
-                               (VersionAgnosticNames.RELU, 'C', {NNCFGraph.IN_PORT_NAME_EDGE_ATTR: 0}),
+                               ('batch_norm', 'relu', {NNCFGraph.IN_PORT_NAME_EDGE_ATTR: 0}),
+                               ('relu', 'C', {NNCFGraph.IN_PORT_NAME_EDGE_ATTR: 0}),
                                ('C', 'B', {NNCFGraph.IN_PORT_NAME_EDGE_ATTR: 0})])
     return mock_graph
 
@@ -560,7 +559,7 @@ class TestInsertionPointGraph:
             "/" + MODEL_INPUT_OP_NAME + "_0": NoopMetatype,
             "ModelForMetatypeTesting/NNCFConv2d[conv_regular]/conv2d_0": Conv2dMetatype,
             "ModelForMetatypeTesting/BatchNorm2d[bn]/batch_norm_0": BatchNormMetatype,
-            "ModelForMetatypeTesting/RELU_0": RELUMetatype,
+            "ModelForMetatypeTesting/relu_0": RELUMetatype,
             "ModelForMetatypeTesting/MaxPool2d[max_pool2d]/max_pool2d_0": MaxPool2dMetatype,
             "ModelForMetatypeTesting/NNCFConvTranspose2d[conv_transpose]/conv_transpose2d_0": ConvTranspose2dMetatype,
             "ModelForMetatypeTesting/NNCFConv2d[conv_depthwise]/conv2d_0": DepthwiseConv2dSubtype,

@@ -131,7 +131,7 @@ def test_activation_shape_tracing(input_shape: Tuple):
         # TODO: extend with checking input tensor size once proper input node marking is implemented
         ("0 ModelForTest/Conv2d[conv1]/conv2d", [shape1]),
         ("1 ModelForTest/BatchNorm2d[bn1]/batch_norm", [shape1]),
-        ("2 ModelForTest/ReLU[relu1]/RELU", [shape1, shape1]),
+        ("2 ModelForTest/ReLU[relu1]/relu", [shape1, shape1]),
         ("3 ModelForTest/max_pool2d", [(shape1[0], shape1[1],
                                         shape1[2] // ModelForTest.MAXPOOL_SIZE,
                                         shape1[3] // ModelForTest.MAXPOOL_SIZE)]),

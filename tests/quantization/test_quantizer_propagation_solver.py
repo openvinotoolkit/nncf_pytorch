@@ -20,13 +20,12 @@ import networkx as nx
 import pytest
 
 from nncf.common.graph.transformations.commands import TargetType
+from nncf.dynamic_graph.transformations.commands import PTTargetPoint
 from nncf.quantization.quantizer_setup import MultiConfigQuantizationPoint
 
 from nncf.dynamic_graph.context import Scope
 from nncf.dynamic_graph.graph import OperationExecutionContext, NNCFGraph, InputAgnosticOperationExecutionContext
-from nncf.dynamic_graph.version_agnostic_op_names import get_version_agnostic_name
 from nncf.nncf_network import InsertionPointGraph, InsertionPointGraphNodeType
-from nncf.dynamic_graph.transformations.commands import PTTargetPoint
 from nncf.common.quantization.structs import QuantizationMode, QuantizerConfig
 from nncf.quantization.quantizer_propagation import QuantizerPropagationStateGraph as QPSG, \
     QuantizerPropagationStateGraphNodeType, QuantizationTrait, OPERATOR_METATYPES, DEFAULT_QUANT_TRAIT_TO_OP_DICT, \
@@ -136,7 +135,7 @@ class TestQuantizerPropagationSolver:
         for op_meta in tested_op_metatypes:
             aliases = op_meta.get_all_aliases()
             for alias in aliases:
-                tested_op_names.append(get_version_agnostic_name(alias))
+                tested_op_names.append(alias)
 
         # Edges should be irrelevant - using random graph
         mock_graph = get_randomly_connected_model_graph(tested_op_names)

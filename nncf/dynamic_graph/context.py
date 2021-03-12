@@ -24,7 +24,6 @@ from nncf.debug import is_debug
 from nncf.dynamic_graph.graph import InputAgnosticOperationExecutionContext
 from nncf.dynamic_graph.graph import NNCFGraph, NNCFNode
 from nncf.dynamic_graph.trace_tensor import make_input_infos
-from nncf.dynamic_graph.version_agnostic_op_names import get_version_agnostic_name
 from nncf.layers import ITERATION_MODULES
 from nncf.utils import maybe_get_iterator
 
@@ -284,10 +283,10 @@ class TracingContext:
                                                inputs)
         return node
 
-    def get_caller_context(self, operator_type: str) -> InputAgnosticOperationExecutionContext:
+    def get_caller_context(self, operator_name: str) -> InputAgnosticOperationExecutionContext:
         """
         Designed to work in the following way - for each scope the context will track the number of the calls to the
-        operators with the name operator_type (call_order). The counter values are preserved until reset by a
+        operators with the name operator_name (call_order). The counter values are preserved until reset by a
         corresponding member function of the context, which must be called after each model iteration - this is
         usually handled inside NNCF. This mechanism allows to discern between multiple function calls inside the same
         module that would each require their own instance of compression layers - for instance, multiple `relu`
@@ -295,11 +294,9 @@ class TracingContext:
         be loaded if the model had changed in the meantime in a way that does not impact the major function call
         order (e.g. if comments were added to the .py file with the model)
         """
-        version_agnostic_operator_type = get_version_agnostic_name(operator_type)
+        call_order = self.get_operator_call_count_in_scope(operator_name, self.scope)
 
-        call_order = self.get_operator_call_count_in_scope(version_agnostic_operator_type, self.scope)
-
-        ia_op_exec_context = InputAgnosticOperationExecutionContext(version_agnostic_operator_type,
+        ia_op_exec_context = InputAgnosticOperationExecutionContext(operator_name,
                                                                     self.scope,
                                                                     call_order)
         return ia_op_exec_context

@@ -27,7 +27,7 @@ import networkx as nx
 import torch
 from nncf.dynamic_graph.trace_tensor import TracedTensor
 
-from nncf.common.graph.graph import NNCFGraph
+from nncf.common.graph import NNCFGraph
 from nncf.utils import objwalk
 from nncf.dynamic_graph.graph import ModuleAttributes
 from torch import nn
@@ -58,7 +58,7 @@ from nncf.dynamic_graph.transform_graph import replace_modules_by_nncf_modules
 from nncf.dynamic_graph.transformations.commands import PTInsertionCommand
 from nncf.dynamic_graph.transformations.commands import PTTargetPoint
 from nncf.dynamic_graph.wrappers import _get_module_attributes
-from nncf.hw_config import HWConfig
+from nncf.common.hardware.config import HWConfig
 from nncf.layers import NNCF_GENERAL_CONV_MODULES_DICT
 from nncf.layers import NNCF_MODULES
 from nncf.layers import NNCF_WRAPPED_USER_MODULES_DICT

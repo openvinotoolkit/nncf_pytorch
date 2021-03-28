@@ -24,8 +24,8 @@ import networkx.algorithms.isomorphism as iso
 from networkx.drawing.nx_agraph import to_agraph
 from torch import Tensor
 
-from nncf.common.graph.graph import NNCFGraph
-from nncf.common.graph.graph import NNCFNode
+from nncf.common.graph import NNCFGraph
+from nncf.common.graph import NNCFNode
 from nncf.common.graph.module_attributes import BaseModuleAttributes
 from nncf.common.utils.logger import logger as nncf_logger
 from nncf.dynamic_graph.graph_matching import Expression

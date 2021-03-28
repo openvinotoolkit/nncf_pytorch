@@ -42,7 +42,7 @@ from nncf.dynamic_graph.graph_builder import ModelInputInfo
 from nncf.dynamic_graph.graph_builder import create_dummy_forward_fn
 from nncf.dynamic_graph.graph_builder import create_input_infos
 from nncf.dynamic_graph.graph_builder import create_mock_tensor
-from nncf.hw_config import HWConfigType
+from nncf.common.hardware.config import HWConfigType
 from nncf.layers import LSTMCellNNCF
 from nncf.layers import NNCF_RNN
 from nncf.nncf_network import NNCFNetwork

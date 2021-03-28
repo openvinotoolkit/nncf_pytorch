@@ -11,7 +11,7 @@
  limitations under the License.
 """
 
-from nncf.common.graph.graph import NNCFNode
+from nncf.common.graph import NNCFNode
 
 
 class DefaultMetaOp:

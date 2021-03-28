@@ -10,16 +10,17 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 """
-from beta.nncf.tensorflow.pruning.utils import TFPruningOperationsMetatypeRegistry
+
 from beta.nncf.tensorflow.pruning.utils import is_depthwise_conv
 from beta.nncf.tensorflow.graph.patterns import KERAS_ACTIVATIONS
 from beta.nncf.tensorflow.graph.patterns import TF_ACTIVATIONS
 from beta.nncf.tensorflow.layers.common import ELEMENTWISE_LAYERS
-from nncf.common.graph.graph import NNCFNode
+from nncf.common.graph import NNCFNode
 from nncf.common.pruning.utils import is_grouped_conv
+from nncf.common.pruning.utils import PruningOperationsMetatypeRegistry
 from nncf.common.pruning.export_helpers import DefaultMetaOp
 
-TF_PRUNING_OPERATOR_METATYPES = TFPruningOperationsMetatypeRegistry("operator_metatypes")
+TF_PRUNING_OPERATOR_METATYPES = PruningOperationsMetatypeRegistry("operator_metatypes")
 
 
 def _get_types(expression):

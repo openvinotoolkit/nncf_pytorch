@@ -128,7 +128,7 @@ class OutputNoopMetatype(PTOperatorMetatype):
     external_op_names = [name, MODEL_OUTPUT_OP_NAME]
 
 
-@OPERATOR_METATYPES.register()
+@PT_OPERATOR_METATYPES.register()
 class NoopMetatype(PTOperatorMetatype):
     name = "noop"
     external_op_names = [name]

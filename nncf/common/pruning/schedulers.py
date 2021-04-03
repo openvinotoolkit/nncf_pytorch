@@ -11,9 +11,10 @@
  limitations under the License.
 """
 
-from typing import Optional
 import numpy as np
 import scipy.optimize
+
+from typing import Optional
 
 from nncf.api.compression import CompressionScheduler
 from nncf.common.utils.registry import Registry

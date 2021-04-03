@@ -48,9 +48,3 @@ def fill_input_masks(nx_node, nx_graph, device='cpu'):
             mask = torch.ones(nx_graph.edges[input_edges[i]]['activation_shape'][1], device=device)
         filled_input_masks.append(mask)
     return input_masks, filled_input_masks
-
-
-class PTPruningOperationsMetatypeRegistry(PruningOperationsMetatypeRegistry):
-    @staticmethod
-    def get_version_agnostic_name(name):
-        return get_version_agnostic_name(name)

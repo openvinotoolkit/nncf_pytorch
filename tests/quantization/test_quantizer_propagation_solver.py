@@ -33,10 +33,10 @@ from nncf.dynamic_graph.context import Scope
 from nncf.dynamic_graph.graph import InputAgnosticOperationExecutionContext
 from nncf.dynamic_graph.graph import NNCFGraph
 from nncf.dynamic_graph.graph import OperationExecutionContext
+from nncf.dynamic_graph.operator_metatypes import PT_OPERATOR_METATYPES
 from nncf.dynamic_graph.version_agnostic_op_names import get_version_agnostic_name
 from nncf.nncf_network import InsertionPointGraph
 from nncf.quantization.quantizer_propagation import DEFAULT_QUANT_TRAIT_TO_OP_DICT
-from nncf.quantization.quantizer_propagation import OPERATOR_METATYPES
 from nncf.quantization.quantizer_propagation import PropagatingQuantizer
 from nncf.quantization.quantizer_propagation import PropagationStrategy
 from nncf.quantization.quantizer_propagation import QuantizationTrait
@@ -153,7 +153,7 @@ class TestQuantizerPropagationSolver:
     def test_set_quantization_traits_for_quant_prop_graph_nodes(self):
         # Test all patchable metatypes. If a patchable metatype is not registered
         # in quantization trait-to-metatype dict, the test will fail.
-        tested_op_metatypes = list(OPERATOR_METATYPES.registry_dict.values()) # type: List[OperatorMetatype]
+        tested_op_metatypes = list(PT_OPERATOR_METATYPES.registry_dict.values()) # type: List[OperatorMetatype]
         tested_op_names = []
         for op_meta in tested_op_metatypes:
             aliases = op_meta.get_all_aliases()

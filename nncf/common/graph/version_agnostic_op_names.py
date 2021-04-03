@@ -11,5 +11,19 @@
  limitations under the License.
 """
 
-from nncf.common.graph.graph import NNCFNode
-from nncf.common.graph.graph import NNCFGraph
+from nncf.common.utils.backend import __nncf_backend__
+
+def get_version_agnostic_name(version_specific_name: str):
+    def get_func_impl():
+        if __nncf_backend__ == 'Torch':
+            from nncf.dynamic_graph.version_agnostic_op_names \
+                import get_version_agnostic_name as torch_fn_impl
+            return torch_fn_impl
+
+        def default_func_impl(version_specific_name: str):
+            return version_specific_name
+
+        return default_func_impl
+
+    func = get_func_impl()
+    return func(version_specific_name)

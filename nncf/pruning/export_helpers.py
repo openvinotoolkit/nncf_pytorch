@@ -16,6 +16,7 @@ import torch
 from nncf.common.pruning.export_helpers import DefaultMetaOp
 from nncf.common.pruning.utils import is_grouped_conv
 from nncf.common.pruning.utils import get_sources_of_node
+from nncf.common.pruning.utils import PruningOperationsMetatypeRegistry
 from nncf.common.graph.module_attributes import GroupNormModuleAttributes
 from nncf.dynamic_graph.graph import PTNNCFGraph
 from nncf.dynamic_graph.graph import PTNNCFNode
@@ -26,14 +27,13 @@ from nncf.dynamic_graph.operator_metatypes import InputNoopMetatype, HardTanhMet
     ConvTranspose2dMetatype, ConvTranspose3dMetatype, GroupNormMetatype, OutputNoopMetatype
 from nncf.common.utils.logger import logger as nncf_logger
 from nncf.nncf_network import NNCFNetwork
-from nncf.pruning.export_utils import PTPruningOperationsMetatypeRegistry
 from nncf.pruning.export_utils import identity_mask_propagation, get_input_masks, \
     fill_input_masks
 from nncf.layers import NNCF_WRAPPED_USER_MODULES_DICT
 from nncf.pruning.utils import is_depthwise_conv
 from nncf.pruning.filter_pruning.layers import FilterPruningBlock
 
-PT_PRUNING_OPERATOR_METATYPES = PTPruningOperationsMetatypeRegistry("operator_metatypes")
+PT_PRUNING_OPERATOR_METATYPES = PruningOperationsMetatypeRegistry("operator_metatypes")
 
 
 # pylint: disable=protected-access

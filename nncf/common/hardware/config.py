@@ -11,30 +11,25 @@
  limitations under the License.
 """
 
-from collections import OrderedDict
-from enum import Enum
-from pathlib import Path
-from typing import Any
-from typing import Dict
-from typing import List
-from typing import Optional
-from typing import Set
-from typing import Type
-
 import addict as ad
 import jstyleson as json
 import warnings
 
-from nncf.common.os import safe_open
+from typing import Any, Dict, List, Optional, Set, Type
+from collections import OrderedDict
+from enum import Enum
+from pathlib import Path
+
+from nncf.common.graph.operator_metatypes import OperatorMetatype
+from nncf.common.graph.operator_metatypes import get_operator_metatypes
+from nncf.common.quantization.structs import QuantizationMode
+from nncf.common.quantization.structs import QuantizerConfig
+from nncf.common.utils.os import safe_open
 from nncf.config import product_dict
 from nncf.definitions import HW_CONFIG_RELATIVE_DIR
 from nncf.definitions import NNCF_PACKAGE_ROOT_DIR
-from nncf.dynamic_graph.operator_metatypes import OPERATOR_METATYPES
-from nncf.hw_config_op_names import HWConfigOpName
-from nncf.quantization.layers import AsymmetricQuantizer
-from nncf.quantization.layers import QuantizationMode
-from nncf.quantization.layers import QuantizerConfig
-from nncf.quantization.layers import SymmetricQuantizer
+
+from nncf.common.quantization import qunatizers as quant
 
 
 class HWConfigType(Enum):
@@ -62,9 +57,9 @@ HW_CONFIG_TYPE_TARGET_DEVICE_MAP = {
 }
 
 
-def get_metatypes_by_hw_config_name(hw_config_name: HWConfigOpName) -> List['OperatorMetatype']:
+def get_metatypes_by_hw_config_name(hw_config_name: str) -> List[OperatorMetatype]:
     retval = []
-    for op_meta in OPERATOR_METATYPES.registry_dict.values():  # type: OperatorMetatype
+    for op_meta in get_operator_metatypes().registry_dict.values():
         if hw_config_name in op_meta.hw_config_names:
             retval.append(op_meta)
     return retval
@@ -170,10 +165,10 @@ class HWConfig(list):
             if mode == QuantizationMode.SYMMETRIC:
                 if quantization_subdict['level_low'] < 0 < quantization_subdict['level_high']:
                     signedness_to_force = True
-                true_level_low, true_level_high, _ = SymmetricQuantizer.calculate_level_ranges(bits, True)
+                true_level_low, true_level_high, _ = quant.calculate_symmetric_level_ranges(bits, signed=True)
             else:
                 signedness_to_force = True
-                true_level_low, true_level_high, _ = AsymmetricQuantizer.calculate_level_ranges(bits)
+                true_level_low, true_level_high, _ = quant.calculate_asymmetric_level_ranges(bits)
 
             assert quantization_subdict['level_low'] == true_level_low, \
                     "Invalid value of quantizer parameter `level_low`.\
@@ -200,10 +195,10 @@ class HWConfig(list):
     def get_metatype_vs_quantizer_configs_map(self, for_weights=False) -> Dict[Type['OperatorMetatype'],
                                                                                Optional[List[QuantizerConfig]]]:
         # 'None' for ops unspecified in HW config, empty list for wildcard quantization ops
-        retval = {k: None for k in OPERATOR_METATYPES.registry_dict.values()}
+        retval = {k: None for k in get_operator_metatypes().registry_dict.values()}
         config_key = "weights" if for_weights else "activations"
         for op_dict in self:
-            hw_config_op_name = op_dict.type  # type: HWConfigOpName
+            hw_config_op_name = op_dict.type
 
             metatypes = get_metatypes_by_hw_config_name(hw_config_op_name)
             if not metatypes:
@@ -237,7 +232,7 @@ class HWConfig(list):
                 is_value_matched = op_dict[self.ATTRIBUTES_NAME][attr_name] == attr_value
                 is_attr_set = attr_name in op_dict[self.ATTRIBUTES_NAME]
                 if is_value_matched and is_attr_set:
-                    hw_config_op_name = op_dict.type  # type: HWConfigOpName
+                    hw_config_op_name = op_dict.type
                     metatypes = get_metatypes_by_hw_config_name(hw_config_op_name)
                     if not metatypes:
                         warnings.warn(

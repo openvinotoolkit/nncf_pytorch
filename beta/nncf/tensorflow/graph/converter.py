@@ -17,7 +17,7 @@ import networkx as nx
 import tensorflow as tf
 from tensorflow.python.framework.convert_to_constants import convert_variables_to_constants_v2
 
-from nncf.common.graph.graph import NNCFGraph
+from nncf.common.graph import NNCFGraph
 from nncf.common.graph.module_attributes import ConvolutionModuleAttributes
 from beta.nncf.tensorflow.layers.common import GENERAL_CONV_LAYERS
 from beta.nncf.tensorflow.graph.utils import get_expanded_node_name

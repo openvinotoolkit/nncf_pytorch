@@ -11,14 +11,10 @@
  limitations under the License.
 """
 
-from typing import List
-from typing import Callable
-from typing import Tuple
-from typing import Any
-from typing import KeysView
-from typing import ValuesView
-
 import networkx as nx
+
+from typing import Any, Callable, KeysView, List, Tuple, ValuesView
+
 from nncf.common.graph.module_attributes import BaseModuleAttributes
 
 

@@ -216,9 +216,7 @@ def patch_extension_build_function():
                        'Cannot parse a PyTorch version with the error {}'.format(e))
         return
 
-    if torch_version_tuple >= (1, 8, 0):
-        return
-
+    if torch_version_tuple < (1, 8, 0):
         def sort_arch_flags(func):
             def wrapped(*args, **kwargs):
                 flags = func(*args, **kwargs)

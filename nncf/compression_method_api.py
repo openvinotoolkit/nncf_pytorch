@@ -22,7 +22,6 @@ from functools import partial
 from typing import List, Tuple, Optional, TypeVar, Dict
 
 import torch
-from pkg_resources import parse_version
 from torch import nn
 
 from nncf import EXPORT_ONNX_OPSET_VERSION
@@ -35,7 +34,6 @@ from nncf.common.utils.logger import logger as nncf_logger
 from nncf.nncf_network import NNCFNetwork
 from nncf.nncf_network import PTModelTransformer
 from nncf.structures import BNAdaptationInitArgs
-from nncf.utils import get_torch_version_tuple
 from nncf.utils import should_consider_scope
 from nncf.api.compression import CompressionAlgorithmBuilder
 from nncf.api.compression import CompressionAlgorithmController

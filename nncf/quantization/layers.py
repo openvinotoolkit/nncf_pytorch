@@ -40,7 +40,6 @@ from nncf.quantization.quantize_functions import asymmetric_quantize
 from nncf.quantization.quantize_functions import get_scale_zp_from_input_low_input_high
 from nncf.quantization.quantize_functions import symmetric_quantize
 from nncf.utils import get_flat_tensor_contents_string
-from nncf.utils import get_torch_version_tuple
 from nncf.utils import is_tracing_state
 from nncf.utils import no_jit_trace
 

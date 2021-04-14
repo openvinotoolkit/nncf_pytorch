@@ -21,7 +21,6 @@ from nncf.quantization.layers import PTQuantizerSpec
 from nncf.quantization.layers import QUANTIZATION_MODULES
 from nncf.quantization.layers import QuantizationMode
 from nncf.quantization.layers import QuantizerExportMode
-from nncf.utils import get_torch_version_tuple
 from tests.test_helpers import TwoConvTestModel
 from tests.test_helpers import load_exported_onnx_version
 

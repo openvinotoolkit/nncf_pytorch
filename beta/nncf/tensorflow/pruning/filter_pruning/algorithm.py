@@ -20,7 +20,9 @@ import tensorflow as tf
 from beta.nncf.tensorflow.algorithm_selector import TF_COMPRESSION_ALGORITHMS
 from beta.nncf.tensorflow.api.compression import TFCompressionAlgorithmController
 from beta.nncf.tensorflow.graph.utils import collect_wrapped_layers
+from beta.nncf.tensorflow.graph.utils import get_layer_by_original_name
 from beta.nncf.tensorflow.graph.utils import get_original_name
+from beta.nncf.tensorflow.graph.utils import get_original_name_and_instance_index
 from beta.nncf.tensorflow.layers.common import GENERAL_CONV_LAYERS
 from beta.nncf.tensorflow.layers.common import LAYERS_WITH_WEIGHTS
 from beta.nncf.tensorflow.layers.common import LINEAR_LAYERS
@@ -180,31 +182,35 @@ class FilterPruningController(BasePruningAlgoController):
         Collects input/output shapes of convolutional and dense layers,
         calculates corresponding layerwise FLOPs
         """
-        for layer in self._model.layers:
+        for node in self._original_graph.get_nodes_by_types(GENERAL_CONV_LAYERS):
+            node_name, node_index = get_original_name_and_instance_index(node.node_name)
+            layer = get_layer_by_original_name(self._model, node_name)
             layer_ = layer.layer if isinstance(layer, NNCFWrapper) else layer
 
-            if type(layer_).__name__ in GENERAL_CONV_LAYERS:
-                channel_axis = get_input_channel_axis(layer_)
-                dims_slice = slice(channel_axis - layer_.rank, channel_axis) \
-                    if layer.data_format == 'channels_last' else slice(channel_axis + 1, None)
-                in_shape = layer.get_input_shape_at(0)[dims_slice]
-                out_shape = layer.get_output_shape_at(0)[dims_slice]
+            channel_axis = get_input_channel_axis(layer_)
+            dims_slice = slice(channel_axis - layer_.rank, channel_axis) \
+                if layer.data_format == 'channels_last' else slice(channel_axis + 1, None)
+            in_shape = layer.get_input_shape_at(node_index)[dims_slice]
+            out_shape = layer.get_output_shape_at(node_index)[dims_slice]
 
-                if not is_valid_shape(in_shape) or not is_valid_shape(out_shape):
-                    raise RuntimeError(f'Input/output shape is not defined for layer `{layer.name}` ')
+            if not is_valid_shape(in_shape) or not is_valid_shape(out_shape):
+                raise RuntimeError(f'Input/output shape is not defined for layer `{layer.name}` ')
 
-                self._layers_in_shapes[layer_.name] = in_shape
-                self._layers_out_shapes[layer_.name] = out_shape
+            self._layers_in_shapes[node.node_name] = in_shape
+            self._layers_out_shapes[node.node_name] = out_shape
 
-            elif type(layer_).__name__ in LINEAR_LAYERS:
-                in_shape = layer.get_input_shape_at(0)[1:]
-                out_shape = layer.get_output_shape_at(0)[1:]
+        for node in self._original_graph.get_nodes_by_types(LINEAR_LAYERS):
+            node_name, node_index = get_original_name_and_instance_index(node.node_name)
+            layer = get_layer_by_original_name(self._model, node_name)
 
-                if not is_valid_shape(in_shape) or not is_valid_shape(out_shape):
-                    raise RuntimeError(f'Input/output shape is not defined for layer `{layer.name}` ')
+            in_shape = layer.get_input_shape_at(node_index)[1:]
+            out_shape = layer.get_output_shape_at(node_index)[1:]
 
-                self._layers_in_shapes[layer_.name] = in_shape
-                self._layers_out_shapes[layer_.name] = out_shape
+            if not is_valid_shape(in_shape) or not is_valid_shape(out_shape):
+                raise RuntimeError(f'Input/output shape is not defined for layer `{layer.name}` ')
+
+            self._layers_in_shapes[node.node_name] = in_shape
+            self._layers_out_shapes[node.node_name] = out_shape
 
         self._nodes_flops = count_flops_for_nodes(self._original_graph,
                                                   self._layers_in_shapes,
@@ -223,8 +229,7 @@ class FilterPruningController(BasePruningAlgoController):
         # 1. Calculate masks
         for group in self._pruned_layer_groups_info.get_all_clusters():
             # a. Calculate the cumulative importance for all filters in the group
-            cumulative_filters_importance = \
-                self._calculate_filters_importance_in_group(group, wrapped_layers)
+            cumulative_filters_importance = self._calculate_filters_importance_in_group(group)
             filters_num = len(cumulative_filters_importance)
 
             # b. Calculate threshold
@@ -268,8 +273,7 @@ class FilterPruningController(BasePruningAlgoController):
         # 1. Calculate masks
         # a. Calculate importances for all groups of filters
         for group in self._pruned_layer_groups_info.get_all_clusters():
-            cumulative_filters_importance = \
-                self._calculate_filters_importance_in_group(group, wrapped_layers)
+            cumulative_filters_importance = self._calculate_filters_importance_in_group(group)
             filter_importances[group.id] = cumulative_filters_importance
 
         # b. Calculate one threshold for all weights
@@ -317,9 +321,7 @@ class FilterPruningController(BasePruningAlgoController):
         group_indexes = []
         filter_indexes = []
         for group in self._pruned_layer_groups_info.get_all_clusters():
-            cumulative_filters_importance = \
-                self._calculate_filters_importance_in_group(group, wrapped_layers)
-
+            cumulative_filters_importance = self._calculate_filters_importance_in_group(group)
             filter_importances.extend(cumulative_filters_importance)
             filters_num = len(cumulative_filters_importance)
             group_indexes.extend([group.id] * filters_num)
@@ -418,25 +420,30 @@ class FilterPruningController(BasePruningAlgoController):
                                           linear_op_types=LINEAR_LAYERS).values())
         return flops
 
-    def _calculate_filters_importance_in_group(self, group: NodesCluster,
-                                               wrapped_layers: List[tf.keras.layers.Layer]):
+    def _calculate_filters_importance_in_group(self, group: NodesCluster):
         """
         Calculates cumulative filters importance in the group.
         :param group: Nodes cluster
-        :param wrapped_layers: List of keras nodes wrapped by NNCFWrapper
         :return a list of filter importance scores
         """
-        group_layer_names = [node.layer_name for node in group.nodes]
-        group_filters_num = tf.constant([get_filters_num(wrapped_layer)
-                                         for wrapped_layer in wrapped_layers
-                                         if wrapped_layer.layer.name in group_layer_names])
+        group_layers = [get_layer_by_original_name(model=self._model,
+                                                   name=get_original_name(node.layer_name))
+                        for node in group.nodes]
+        group_filters_num = tf.constant([get_filters_num(layer) for layer in group_layers])
         filters_num = group_filters_num[0]
         assert tf.reduce_all(group_filters_num == filters_num)
 
         cumulative_filters_importance = tf.zeros(filters_num)
         # Calculate cumulative importance for all filters in this group
+        shared_nodes = []
         for minfo in group.nodes:
-            layer = [layer for layer in wrapped_layers if layer.layer.name == minfo.layer_name][0]
+            layer_name = get_original_name(minfo.layer_name)
+            if layer_name in shared_nodes:
+                continue
+            nncf_node = self._original_graph.get_node_by_id(minfo.nncf_node_id)
+            if nncf_node.data['is_shared']:
+                shared_nodes.append(layer_name)
+            layer = get_layer_by_original_name(self._model, layer_name)
             filters_importance = self._layer_filter_importance(layer)
             cumulative_filters_importance += filters_importance
 

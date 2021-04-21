@@ -24,6 +24,7 @@ from typing import List, Tuple, Optional, TypeVar, Dict
 import torch
 from torch import nn
 
+from nncf import EXPORT_ONNX_OPSET_VERSION
 from nncf.config import NNCFConfig
 from nncf.dynamic_graph.graph_tracer import create_mock_tensor
 from nncf.graph.transformations.layout import PTTransformationLayout
@@ -186,7 +187,7 @@ class PTCompressionAlgorithmController(CompressionAlgorithmController):
                               save_path, input_names=input_names,
                               output_names=output_names,
                               enable_onnx_checker=False,
-                              opset_version=10,
+                              opset_version=EXPORT_ONNX_OPSET_VERSION,
                               training=True)  # Do not fuse Conv+BN in ONNX. May cause dropout nodes to appear in ONNX
             model.enable_dynamic_graph_building()
         model.forward = original_forward

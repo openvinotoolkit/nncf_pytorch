@@ -15,6 +15,7 @@ from itertools import product
 import pytest
 import torch
 
+from nncf import EXPORT_ONNX_OPSET_VERSION
 from nncf import NNCFConfig
 from nncf.quantization.layers import PTQuantizerSpec
 from nncf.quantization.layers import QUANTIZATION_MODULES
@@ -91,15 +92,17 @@ INPUT_TENSOR_SHAPE = (2, 64, 15, 10)
 PER_CHANNEL_AQ_SCALE_SHAPE = (1, INPUT_TENSOR_SHAPE[1], 1, 1)
 
 
-@pytest.mark.parametrize('per_channel, qmode, export_mode',
+@pytest.mark.parametrize('per_channel, qmode, half_range, export_mode',
                          product(
                              [True, False],
                              [QuantizationMode.SYMMETRIC, QuantizationMode.ASYMMETRIC],
+                             [True, False],
                              [QuantizerExportMode.FAKE_QUANTIZE, QuantizerExportMode.ONNX_QUANTIZE_DEQUANTIZE_PAIRS]
                              ))
-def test_onnx_export_to_quantize_dequantize_per_channel(per_channel: bool,
-                                                        qmode: QuantizationMode,
-                                                        export_mode: QuantizerExportMode):
+def test_onnx_export_to_quantize_dequantize_variants(per_channel: bool,
+                                                     qmode: QuantizationMode,
+                                                     half_range: bool,
+                                                     export_mode: QuantizerExportMode):
     scale_shape = PER_CHANNEL_AQ_SCALE_SHAPE if per_channel else (1,)
     qspec = PTQuantizerSpec(
         scale_shape=scale_shape,
@@ -108,7 +111,7 @@ def test_onnx_export_to_quantize_dequantize_per_channel(per_channel: bool,
         signedness_to_force=None,
         logarithm_scale=False,
         narrow_range=False,
-        half_range=False,
+        half_range=half_range,
     )
 
     q_cls = QUANTIZATION_MODULES.get(qmode)
@@ -122,7 +125,9 @@ def test_onnx_export_to_quantize_dequantize_per_channel(per_channel: bool,
     quantizer._export_mode = export_mode
 
     x = torch.rand(INPUT_TENSOR_SHAPE)
-    if quantizer.per_channel and export_mode is QuantizerExportMode.ONNX_QUANTIZE_DEQUANTIZE_PAIRS:
+    if quantizer.per_channel and \
+            export_mode is QuantizerExportMode.ONNX_QUANTIZE_DEQUANTIZE_PAIRS and \
+            EXPORT_ONNX_OPSET_VERSION < 13:
         with pytest.raises(RuntimeError):
             quantizer.run_export_quantization(x)
     else:

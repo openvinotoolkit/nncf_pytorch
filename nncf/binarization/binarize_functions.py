@@ -15,9 +15,19 @@ import warnings
 
 import torch
 
+from nncf import EXPORT_ONNX_OPSET_VERSION
 from nncf.utils import add_domain
 
 from .extensions import BinarizedFunctionsCUDA
+
+
+def _unsqueeze_helper(g, input_, axes_i):
+    # Unsqueeze handling for different opsets inspired by torch.onnx.symbolic_helper._unsqueeze_helper
+    if EXPORT_ONNX_OPSET_VERSION >= 13:
+        axes = g.op("Constant", value_t=torch.tensor(axes_i, dtype=torch.long))
+        return g.op("Unsqueeze", input_, axes)
+    return g.op("Unsqueeze", input_, axes_i=axes_i)
+
 
 class XNORBinarizeFn(torch.autograd.Function):
     """ Binarizes x into `scale` * { +1; -1}, where +1 or -1 are chosen based
@@ -26,7 +36,7 @@ class XNORBinarizeFn(torch.autograd.Function):
     @staticmethod
     def symbolic(g, x):
         zero = g.constant(0, [1], 'float')
-        zero = g.op("Unsqueeze", zero, axes_i=[1, 2, 3])
+        zero = _unsqueeze_helper(g, zero, [1, 2, 3])
         scale = g.op("Abs", x)
         scale = g.op("ReduceMean", scale, axes_i=[1, 2, 3])
         scale_neg = g.op("Neg", scale)
@@ -57,7 +67,8 @@ class DOREFABinarizeFn(torch.autograd.Function):
     @staticmethod
     def symbolic(g, x):
         zero = g.constant(0, [1], 'float')
-        zero = g.op("Unsqueeze", zero, axes_i=[1, 2, 3])
+
+        zero = _unsqueeze_helper(g, zero, [1, 2, 3])
         scale = g.op("Abs", x)
         scale = g.op("ReduceMean", scale, axes_i=[0, 1, 2, 3])
         scale_neg = g.op("Neg", scale)
@@ -86,9 +97,9 @@ class ActivationBinarizationScaleThresholdFn(torch.autograd.Function):
     @staticmethod
     def symbolic(g, x, scale, threshold):
         zero = g.constant(0, [1], 'float')
-        zero = g.op("Unsqueeze", zero, axes_i=[0, 2, 3])
+        zero = _unsqueeze_helper(g, zero, [0, 2, 3])
         threshold = g.op("Mul", threshold, scale)
-        scale = g.op("Unsqueeze", scale, axes_i=[0, 2, 3])
+        scale = _unsqueeze_helper(g, scale, [0, 2, 3])
         return g.op(add_domain("FakeQuantize"), x, threshold, threshold, zero, scale, levels_i=2)
 
     @staticmethod

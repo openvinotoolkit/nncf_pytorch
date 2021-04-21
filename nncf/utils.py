@@ -12,11 +12,13 @@
 """
 from collections import OrderedDict
 from typing import Dict, Callable, Any, Mapping, Sequence, Set, List, Union
+from typing import Tuple
 
 import numpy as np
 import random
 import re
 import torch
+from pkg_resources import parse_version
 from torch import distributed as dist, nn
 from torch.nn import Module
 
@@ -389,3 +391,9 @@ def compute_FLOPs_hook(module, input_, output, dict_to_save, ctx: 'TracingContex
 def add_domain(name_operator: str) -> str:
     from nncf.compression_method_api import DOMAIN_CUSTOM_OPS_NAME
     return DOMAIN_CUSTOM_OPS_NAME + "::" + name_operator
+
+
+def get_torch_version_tuple() -> Tuple[int, int, int]:
+    torch_version = parse_version(torch.__version__).base_version
+    torch_version_tuple = tuple(map(int, torch_version.split('.')))
+    return torch_version_tuple

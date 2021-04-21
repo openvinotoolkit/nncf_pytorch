@@ -10,7 +10,6 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 """
-
 from .common.utils.backend import __nncf_backend__
 from .config import NNCFConfig
 from .version import __version__
@@ -28,6 +27,8 @@ if __nncf_backend__ == 'Torch':
             curr=torch.__version__
         ))
 
+    from .utils import get_torch_version_tuple
+    EXPORT_ONNX_OPSET_VERSION = 10 if get_torch_version_tuple() < (1, 8, 0) else 13
     # NNCF builds extensions based on torch load() function
     # This function has a bug inside which patch_extension_build_function() solves
     # This bug will be fixed in torch 1.8.0

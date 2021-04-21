@@ -10,9 +10,13 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 """
+from typing import Optional
+from typing import Tuple
+
 import torch
 import warnings
 
+from nncf.tensor_statistics.reduction import get_channel_count_and_dim_idx
 from nncf.utils import add_domain
 
 from .extensions import QuantizedFunctionsCPU, QuantizedFunctionsCUDA
@@ -133,13 +137,17 @@ class ExportQuantizeToFakeQuantize(torch.autograd.Function):
 
 class ExportQuantizeToONNXQuantDequant(torch.autograd.Function):
     @staticmethod
-    def symbolic(g, input_, y_scale, y_zero_point):
-        quantized = g.op("QuantizeLinear", input_, y_scale, y_zero_point)
-        dequantized = g.op("DequantizeLinear", quantized, y_scale, y_zero_point)
+    def symbolic(g, input_, y_scale, y_zero_point, per_channel_idx: Optional[int] = None):
+        if per_channel_idx is not None:
+            quantized = g.op("QuantizeLinear", input_, y_scale, y_zero_point, axis_i=per_channel_idx)
+            dequantized = g.op("DequantizeLinear", quantized, y_scale, y_zero_point, axis_i=per_channel_idx)
+        else:
+            quantized = g.op("QuantizeLinear", input_, y_scale, y_zero_point)
+            dequantized = g.op("DequantizeLinear", quantized, y_scale, y_zero_point)
         return dequantized
 
     @staticmethod
-    def forward(ctx, input_, y_scale, y_zero_point):
+    def forward(ctx, input_, y_scale, y_zero_point, per_channel_idx: Optional[int] = None):
         return input_
 
     @staticmethod
@@ -148,9 +156,11 @@ class ExportQuantizeToONNXQuantDequant(torch.autograd.Function):
         return grad_output
 
 
-def get_scale_zp_from_input_low_input_high(level_low, level_high, input_low, input_high):
+def get_scale_zp_from_input_low_input_high(level_low: int, level_high: int,
+                                           input_low: torch.Tensor, input_high: torch.Tensor) -> \
+        Tuple[torch.Tensor, torch.Tensor, Optional[int]]:
     levels = level_high - level_low + 1
-    assert levels in [255, 256], "Can only export to INT8 256-level ONNX Quantize/Dequantize pairs"
+    assert levels == 256, "Can only export to INT8 256-level ONNX Quantize/Dequantize pairs"
 
     y_scale = (input_high - input_low) / (level_high - level_low)
     y_zero_point = (level_low * input_high - level_high * input_low) / (input_high - input_low)
@@ -162,9 +172,13 @@ def get_scale_zp_from_input_low_input_high(level_low, level_high, input_low, inp
     level_high = level_high.to(y_zero_point.device)
     y_zero_point = torch.min(torch.max(level_low, y_zero_point.to(type_)), level_high)
 
-    y_scale = torch.squeeze(y_scale)
-    y_zero_point = torch.squeeze(y_zero_point)
-    return y_scale, y_zero_point
+    _, per_channel_idx = get_channel_count_and_dim_idx(list(y_scale.shape))
+
+    if len(y_scale.shape) > 1 or y_scale.numel() > 1:
+        y_scale = torch.squeeze(y_scale)
+        y_zero_point = torch.squeeze(y_zero_point)
+        return y_scale, y_zero_point, per_channel_idx
+    return y_scale, y_zero_point, None
 
 
 @register_operator()

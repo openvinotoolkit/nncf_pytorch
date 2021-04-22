@@ -37,6 +37,7 @@ from nncf.utils import should_consider_scope
 from nncf.api.compression import CompressionAlgorithmBuilder
 from nncf.api.compression import CompressionAlgorithmController
 from nncf.api.compression import CompressionLoss
+from nncf.common.schedulers import StubCompressionScheduler
 
 ModelType = TypeVar('ModelType')
 
@@ -190,6 +191,19 @@ class PTCompressionAlgorithmController(CompressionAlgorithmController):
                               training=True)  # Do not fuse Conv+BN in ONNX. May cause dropout nodes to appear in ONNX
             model.enable_dynamic_graph_building()
         model.forward = original_forward
+
+    def disable_scheduler(self):
+        self._scheduler = StubCompressionScheduler()
+        self._scheduler.target_level = 0.0
+
+    @property
+    def compression_rate(self) -> float:
+        raise NotImplementedError
+
+    @compression_rate.setter
+    def compression_rate(self, compression_rate: float) -> None:
+        raise NotImplementedError
+
 
 
 class PTCompressionAlgorithmBuilder(CompressionAlgorithmBuilder):

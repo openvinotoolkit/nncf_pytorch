@@ -208,7 +208,6 @@ def train(config, compression_ctrl, model, criterion, criterion_fn, lr_scheduler
         # update compression scheduler state at the begin of the epoch
         compression_ctrl.scheduler.epoch_step()
 
-        config.cur_epoch = epoch
         if config.distributed:
             train_sampler.set_epoch(epoch)
 
@@ -224,7 +223,7 @@ def train(config, compression_ctrl, model, criterion, criterion_fn, lr_scheduler
         acc1 = best_acc1
         if epoch % config.test_every_n_epochs == 0:
             # evaluate on validation set
-            acc1, _ = validate(val_loader, model, criterion, config)
+            acc1, _ = validate(val_loader, model, criterion, config, epoch=epoch)
 
         compression_level = compression_ctrl.compression_level()
         # remember best acc@1, considering compression level. If current acc@1 less then the best acc@1, checkpoint
@@ -458,7 +457,7 @@ def train_epoch(train_loader, model, criterion, criterion_fn, optimizer, compres
                     config.tb.add_scalar('train/statistics/{}'.format(stat_name), stat_value, i + global_step)
 
 
-def validate(val_loader, model, criterion, config):
+def validate(val_loader, model, criterion, config, epoch=0):
     batch_time = AverageMeter()
     losses = AverageMeter()
     top1 = AverageMeter()
@@ -501,12 +500,12 @@ def validate(val_loader, model, criterion, config):
                     ))
 
         if is_main_process():
-            config.tb.add_scalar("val/loss", losses.avg, len(val_loader) * config.get('cur_epoch', 0))
-            config.tb.add_scalar("val/top1", top1.avg, len(val_loader) * config.get('cur_epoch', 0))
-            config.tb.add_scalar("val/top5", top5.avg, len(val_loader) * config.get('cur_epoch', 0))
-            config.mlflow.safe_call('log_metric', "val/loss", float(losses.avg), config.get('cur_epoch', 0))
-            config.mlflow.safe_call('log_metric', "val/top1", float(top1.avg), config.get('cur_epoch', 0))
-            config.mlflow.safe_call('log_metric', "val/top5", float(top5.avg), config.get('cur_epoch', 0))
+            config.tb.add_scalar("val/loss", losses.avg, len(val_loader) * epoch)
+            config.tb.add_scalar("val/top1", top1.avg, len(val_loader) * epoch)
+            config.tb.add_scalar("val/top5", top5.avg, len(val_loader) * epoch)
+            config.mlflow.safe_call('log_metric', "val/loss", float(losses.avg), epoch)
+            config.mlflow.safe_call('log_metric', "val/top1", float(top1.avg), epoch)
+            config.mlflow.safe_call('log_metric', "val/top5", float(top5.avg), epoch)
 
         logger.info(' * Acc@1 {top1.avg:.3f} Acc@5 {top5.avg:.3f}\n'.format(top1=top1, top5=top5))
 

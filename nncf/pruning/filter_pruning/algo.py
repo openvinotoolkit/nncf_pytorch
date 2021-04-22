@@ -52,6 +52,7 @@ from nncf.pruning.filter_pruning.layers import FilterPruningBlock
 from nncf.pruning.filter_pruning.layers import inplace_apply_filter_binary_mask
 from nncf.pruning.utils import init_output_masks_in_graph
 from nncf.utils import get_filters_num
+from nncf.common.accuracy_aware_training.algo import ACCURACY_AWARE_CONTROLLERS
 
 
 @COMPRESSION_ALGORITHMS.register('filter_pruning')
@@ -77,6 +78,7 @@ class FilterPruningBuilder(BasePruningAlgoBuilder):
         return PTElementwise.get_all_op_aliases()
 
 
+@ACCURACY_AWARE_CONTROLLERS.register('filter_pruning')
 class FilterPruningController(BasePruningAlgoController):
     def __init__(self, target_model: NNCFNetwork,
                  prunable_types: List[str],
@@ -619,3 +621,16 @@ class FilterPruningController(BasePruningAlgoController):
         if actual_pruning_level >= target_pruning_level:
             return CompressionLevel.FULL
         return CompressionLevel.PARTIAL
+
+    @property
+    def compression_rate(self):
+        if self.prune_flops:
+            return 1 - self.current_flops / self.full_flops
+        return self.pruning_rate
+
+    @compression_rate.setter
+    def compression_rate(self, pruning_rate):
+        is_pruning_controller_frozen = self.frozen
+        self.frozen = False
+        self.set_pruning_rate(pruning_rate)
+        self.frozen = is_pruning_controller_frozen

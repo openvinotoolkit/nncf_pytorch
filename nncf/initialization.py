@@ -11,7 +11,9 @@ from torch.nn.modules.loss import _Loss
 from torch.utils.data import DataLoader
 
 from nncf.progress_bar import ProgressBar
+from nncf.structures import TrainEpochArgs
 from nncf.structures import AutoQPrecisionInitArgs
+from nncf.structures import ModelEvaluationArgs
 from nncf.structures import BNAdaptationInitArgs
 from nncf.structures import QuantizationPrecisionInitArgs
 from nncf.structures import QuantizationRangeInitArgs
@@ -225,7 +227,8 @@ def register_default_init_args(nncf_config: 'NNCFConfig',
                                criterion_fn: Callable[[Any, Any, _Loss], torch.Tensor] = None,
                                autoq_eval_fn: Callable[[torch.nn.Module, torch.utils.data.DataLoader], float] = None,
                                autoq_eval_loader: torch.utils.data.DataLoader = None,
-                               device: str = None) -> 'NNCFConfig':
+                               device: str = None,
+                               ) -> 'NNCFConfig':
     nncf_config.register_extra_structs([QuantizationRangeInitArgs(data_loader=train_loader,
                                                                   device=device),
                                         BNAdaptationInitArgs(data_loader=train_loader,
@@ -246,4 +249,23 @@ def register_default_init_args(nncf_config: 'NNCFConfig',
                                                                    eval_fn=autoq_eval_fn,
                                                                    nncf_config=nncf_config)])
 
+    if autoq_eval_fn:
+        nncf_config.register_extra_structs([ModelEvaluationArgs(data_loader=autoq_eval_loader,
+                                                                eval_fn=autoq_eval_fn)])
+
+    return nncf_config
+
+
+def register_training_loop_args(nncf_config: 'NNCFConfig',
+                                train_epoch_fn=None,
+                                eval_fn=None,
+                                configure_optimizers_fn=None,
+                                tensorboard_writer=None,
+                                log_dir=None):
+
+    nncf_config.register_extra_structs([TrainEpochArgs(train_epoch_fn=train_epoch_fn,
+                                                       eval_fn=eval_fn,
+                                                       configure_optimizers_fn=configure_optimizers_fn,
+                                                       tensorboard_writer=tensorboard_writer,
+                                                       log_dir=log_dir)])
     return nncf_config

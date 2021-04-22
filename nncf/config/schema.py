@@ -704,6 +704,26 @@ TARGET_DEVICE_SCHEMA = {
     "enum": ["ANY", "CPU", "GPU", "VPU", "TRIAL"]
 }
 
+ACCURACY_AWARE_SCHEMA = {
+    "maximal_accuracy_degradation": with_attributes(_NUMBER,
+                                                    description="Maximally allowed accuracy degradation"
+                                                                " of the model"),
+    "initial_training_phase_epochs": with_attributes(_NUMBER,
+                                                     description="Number of epochs to tune during the initial"
+                                                                 "training phase"),
+    "initial_compression_rate_step": with_attributes(_NUMBER,
+                                                      description="initial_compression_rate_step"),
+    "compression_rate_step_reduction_factor":  with_attributes(_NUMBER,
+                                                      description="compression_rate_step_reduction_factor"),
+    "minimal_compression_rate_step":  with_attributes(_NUMBER,
+                                                      description="minimal_compression_rate_step"),
+    "patience_epochs":  with_attributes(_NUMBER,
+                                        description="patience epochs"),
+    "maximal_total_epochs":  with_attributes(_NUMBER,
+                                        description="maximal_total_epochs"),
+}
+
+
 ROOT_NNCF_CONFIG_SCHEMA = {
     "$schema": "http://json-schema.org/draft-07/schema",
     "type": "object",
@@ -730,6 +750,8 @@ ROOT_NNCF_CONFIG_SCHEMA = {
         # This is required for better user feedback, since holistic schema validation is uninformative
         # if there is an error in one of the compression configs.
         "compression": make_object_or_array_of_objects_schema(BASIC_COMPRESSION_ALGO_SCHEMA),
+        "accuracy_aware_training_config": with_attributes(ACCURACY_AWARE_SCHEMA,
+                                   description="Accuracy aware training config"),
         "target_device": with_attributes(TARGET_DEVICE_SCHEMA,
                                          description="The target device, the specificity of which will be taken into "
                                                      "account while compressing in order to obtain the best "

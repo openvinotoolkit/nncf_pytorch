@@ -25,6 +25,7 @@ from nncf.graph.graph_builder import GraphBuilder
 from nncf.nncf_network import NNCFNetwork
 from nncf.utils import is_main_process
 from nncf.algo_selector import COMPRESSION_ALGORITHMS
+from nncf.structures import ModelEvaluationArgs
 
 from nncf.common.utils.logger import logger
 
@@ -40,7 +41,8 @@ def create_compressed_model(model: Module, config: NNCFConfig,
                             dummy_forward_fn: Callable[[Module], Any] = None,
                             wrap_inputs_fn: Callable[[Tuple, Dict], Tuple[Tuple, Dict]] = None,
                             wrap_outputs_fn: Callable[[Tuple, Dict], Tuple[Tuple, Dict]] = None,
-                            dump_graphs=True, ) \
+                            dump_graphs=True,
+                            should_eval_original_model=False) \
     -> Tuple[PTCompressionAlgorithmController, NNCFNetwork]:
     """
     The main function used to produce a model ready for compression fine-tuning from an original PyTorch
@@ -107,16 +109,23 @@ def create_compressed_model(model: Module, config: NNCFConfig,
     ignored_scopes = config.get('ignored_scopes')
     target_scopes = config.get('target_scopes')
 
+    original_model_accuracy = None
+    if should_eval_original_model:
+        evaluation_args = config.get_extra_struct(ModelEvaluationArgs)
+        original_model_accuracy = evaluation_args.eval_fn(model, evaluation_args.data_loader)
+
     compressed_model = NNCFNetwork(model, input_infos=input_info_list,
                                    dummy_forward_fn=dummy_forward_fn,
                                    wrap_inputs_fn=wrap_inputs_fn,
                                    wrap_outputs_fn=wrap_outputs_fn,
                                    ignored_scopes=ignored_scopes,
                                    target_scopes=target_scopes,
-                                   scopes_without_shape_matching=scopes_without_shape_matching)
+                                   scopes_without_shape_matching=scopes_without_shape_matching,
+                                   original_model_accuracy=original_model_accuracy)
 
     should_init = resuming_state_dict is None
     composite_builder = PTCompositeCompressionAlgorithmBuilder(config, should_init=should_init)
+
     composite_builder.apply_to(compressed_model)
 
     compression_ctrl = composite_builder.build_controller(compressed_model)

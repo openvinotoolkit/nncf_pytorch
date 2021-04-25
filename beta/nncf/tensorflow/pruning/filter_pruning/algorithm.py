@@ -427,7 +427,7 @@ class FilterPruningController(BasePruningAlgoController):
         :return a list of filter importance scores
         """
         group_layers = [get_layer_by_original_name(model=self._model,
-                                                   name=get_original_name(node.layer_name))
+                                                   name=get_original_name(node.key))
                         for node in group.nodes]
         group_filters_num = tf.constant([get_filters_num(layer) for layer in group_layers])
         filters_num = group_filters_num[0]

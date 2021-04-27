@@ -12,6 +12,7 @@
 """
 import functools
 import inspect
+import json
 import operator
 from collections import OrderedDict
 from copy import deepcopy
@@ -459,7 +460,7 @@ class NNCFNetwork(nn.Module, PostGraphBuildActing):
             self._compressed_context.add_node_comparators(scopes_without_shape_matching,
                                                           ShapeIgnoringTensorMetaComparator())
         self._load_listener = None
-
+        self.register_buffer('_builder_state', torch.ByteTensor([0]))
 
     @debuggable_forward
     def forward(self, *args, **kwargs):
@@ -475,6 +476,29 @@ class NNCFNetwork(nn.Module, PostGraphBuildActing):
             retval = replicate_same_tensors(retval)
             retval = self._wrap_outputs_fn(retval)
         return retval
+
+    def get_builder_state(self) -> Dict:
+        if not hasattr(self, '_builder_state') or self._builder_state is None:
+            return {}
+        state_bytes = bytes(self._builder_state)
+        state_str = state_bytes.decode('utf-8')
+        return json.loads(state_str)
+
+    def set_builder_state(self, builder_state_dict: Dict):
+        state_str = json.dumps(builder_state_dict)
+        state_bytes = state_str.encode('utf-8')
+        self.register_buffer('_builder_state', torch.ByteTensor(list(state_bytes)))
+
+    def create_builder_state_buffer(self, model_state_dict: Dict[str, torch.Tensor]):
+        builder_state_tensor = model_state_dict.get('_builder_state')
+        if builder_state_tensor is None:
+            # handle DP and DDP
+            builder_state_tensor = model_state_dict.get('module._builder_state')
+        if builder_state_tensor is None:
+            # backward-compatibility with old checkpoints
+            # TODO: care about device
+            builder_state_tensor = torch.ones([1])
+        self.register_buffer('_builder_state', builder_state_tensor)
 
     def _strip_traced_tensors(self, args: Tuple, kwargs: Dict) -> Tuple[Tuple, Dict]:
         """

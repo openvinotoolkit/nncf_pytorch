@@ -53,6 +53,22 @@ class SingleConfigQuantizationPoint(QuantizationPointBase):
             input_shape,
             is_weights=self.is_weight_quantization_point(), per_channel=self.qconfig.per_channel))]
 
+    def get_state(self) -> Dict:
+        return {
+            'insertion_point': self.insertion_point.get_state(),
+            'qconfig': self.qconfig.get_state(),
+            'scopes_of_directly_quantized_operators': list(map(str, self.scopes_of_directly_quantized_operators))
+        }
+
+    @classmethod
+    def from_state(cls, state: Dict) -> 'SingleConfigQuantizationPoint':
+        from nncf.dynamic_graph.context import Scope
+        list_scopes = [Scope.from_str(scope_state) for scope_state in state['scopes_of_directly_quantized_operators']]
+        kwargs = {'insertion_point': PTTargetPoint.from_state(state['insertion_point']),
+                  'qconfig': QuantizerConfig.from_state(state['qconfig']),
+                  'scopes_of_directly_quantized_operators': list_scopes}
+        return cls(**kwargs)
+
 
 class MultiConfigQuantizationPoint(QuantizationPointBase):
     def __init__(self, insertion_point: PTTargetPoint, possible_qconfigs: List[QuantizerConfig],
@@ -223,6 +239,12 @@ class SingleConfigQuantizerSetup(QuantizerSetupBase):
         super().__init__()
         self.quantization_points = {}  # type: Dict[QuantizationPointId, SingleConfigQuantizationPoint]
 
+    def __eq__(self, other):
+        return all(
+            map(lambda x: x[0] == x[1], zip(self.quantization_points.values(), other.quantization_points.values()))) \
+               and self.unified_scale_groups == other.unified_scale_groups \
+               and self.shared_input_operation_set_groups == other.shared_input_operation_set_groups
+
     def get_minmax_values(self,
                           tensor_statistics: Dict[PTTargetPoint, Dict[ReductionShape, TensorStatistic]],
                           target_model: NNCFNetwork) -> \
@@ -248,6 +270,38 @@ class SingleConfigQuantizerSetup(QuantizerSetupBase):
                 minmax_stat = MinMaxTensorStatistic.from_stat(tensor_statistics[ip][scale_shape])
                 retval[qp_id] = minmax_stat
         return retval
+
+    def get_state(self) -> Dict:
+        def set2list(pair):
+            i, qp_id_set = pair
+            return i, list(qp_id_set)
+
+        quantization_points_state = {qp_id: qp.get_state() for qp_id, qp in self.quantization_points.items()}
+        unified_scale_groups_state = dict(map(set2list, self.unified_scale_groups.items()))
+        shared_input_operation_set_groups_state = dict(map(set2list, self.shared_input_operation_set_groups.items()))
+        return {
+            'quantization_points': quantization_points_state,
+            'unified_scale_groups': unified_scale_groups_state,
+            'shared_input_operation_set_groups': shared_input_operation_set_groups_state,
+        }
+
+    @staticmethod
+    def from_state(state: Dict) -> 'SingleConfigQuantizerSetup':
+        setup = SingleConfigQuantizerSetup()
+
+        def decode_qp(pair):
+            str_qp_id, qp_state = pair
+            return int(str_qp_id), SingleConfigQuantizationPoint.from_state(qp_state)
+
+        def list2set(pair):
+            str_idx, qp_id_list = pair
+            return int(str_idx), set(qp_id_list)
+
+        setup.quantization_points = dict(map(decode_qp, state['quantization_points'].items()))
+        setup.unified_scale_groups = dict(map(list2set, state['unified_scale_groups'].items()))
+        shared_input_operation_set_groups_state = state['shared_input_operation_set_groups']
+        setup.shared_input_operation_set_groups = dict(map(list2set, shared_input_operation_set_groups_state.items()))
+        return setup
 
 
 class MultiConfigQuantizerSetup(QuantizerSetupBase):

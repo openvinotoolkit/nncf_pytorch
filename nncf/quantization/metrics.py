@@ -72,10 +72,16 @@ class NetworkQuantizationShareMetric(BaseMetric):
         self.params = {self.PER_CHANNEL_STR, self.PER_TENSOR_STR, self.UNSIGNED_STR, self.SIGNED_STR,
                        self.SYMMETRIC_STR, self.ASYMMETRIC_STR}
         self.params_bits_stat = set()
-        self.num_potential_quantized_weights = build_time_info.num_potential_quantized_weights
-        self.num_potential_quantized_activations = build_time_info.num_potential_quantized_activations
         self.num_placed_weight_quantizers = len(self.weights_quantizers)
         self.num_placed_activation_quantizers = len(self.non_weights_quantizers)
+        # TODO: probably resolve it earlier?
+        if build_time_info is None:
+            self.num_potential_quantized_weights = self.num_placed_weight_quantizers
+            self.num_potential_quantized_activations = self.num_placed_activation_quantizers
+        else:
+            self.num_potential_quantized_weights = build_time_info.num_potential_quantized_weights
+            self.num_potential_quantized_activations = build_time_info.num_potential_quantized_activations
+
         self.num_all_potential_quantizer = self.num_potential_quantized_weights +\
              self.num_potential_quantized_activations
         self.stat = {}

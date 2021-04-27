@@ -10,7 +10,7 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 """
-
+from typing import Dict
 from typing import TypeVar
 
 import torch.nn
@@ -43,12 +43,13 @@ class PTCompositeCompressionLoss(CompositeCompressionLoss, PTCompressionLoss):
 
 class PTCompositeCompressionAlgorithmBuilder(
         CompositeCompressionAlgorithmBuilder, PTCompressionAlgorithmBuilder):
-    def __init__(self, config: 'NNCFConfig', should_init: bool = True):
+    def __init__(self, config: 'NNCFConfig', should_init: bool = True,
+                 should_init_per_builder: Dict[str, bool] = None):
         from nncf import NNCFConfig
         from nncf.model_creation import get_compression_algorithm
 
         super().__init__(config, should_init)
-
+        global_should_init = should_init
         compression_config_json_section = config.get('compression', {})
         compression_config_json_section = deepcopy(compression_config_json_section)
 
@@ -61,15 +62,22 @@ class PTCompositeCompressionAlgorithmBuilder(
             compression_config = NNCFConfig(compression_config_json_section)
             compression_config.register_extra_structs(config.get_all_extra_structs_for_copy())
             compression_config["hw_config_type"] = hw_config_type
-            self._child_builders = [
-                get_compression_algorithm(compression_config)(compression_config, should_init=should_init), ]
+            compression_algorithm_class = get_compression_algorithm(compression_config)
+            should_init = global_should_init
+            if should_init_per_builder:
+                should_init = should_init_per_builder[compression_algorithm_class]
+            self._child_builders = [compression_algorithm_class(compression_config, should_init=should_init), ]
         else:
             for algo_config in compression_config_json_section:
                 algo_config = NNCFConfig(algo_config)
                 algo_config.register_extra_structs(config.get_all_extra_structs_for_copy())
                 algo_config["hw_config_type"] = hw_config_type
+                compression_algorithm_class = get_compression_algorithm(algo_config)
+                should_init = global_should_init
+                if should_init_per_builder:
+                    should_init = should_init_per_builder[compression_algorithm_class]
                 self._child_builders.append(
-                    get_compression_algorithm(algo_config)(algo_config, should_init=should_init))
+                    compression_algorithm_class(algo_config, should_init=should_init))
 
     def __bool__(self):
         return bool(self.child_builders)
@@ -79,6 +87,25 @@ class PTCompositeCompressionAlgorithmBuilder(
         transformer = PTModelTransformer(target_model, layout)
         transformed_model = transformer.transform()
         return transformed_model
+
+    def get_state(self) -> Dict:
+        algo_name_vs_state_map = {}
+        for builder in self.child_builders:
+            builder_state = builder.get_state()
+            if builder_state:
+                # TODO: introduce name?
+                algo_name = builder._registered_name.replace('_', ' ')
+                algo_name_vs_state_map[algo_name] = builder_state
+        return {'config': dict(self.config.items()),
+                'algo_name_vs_state_map':  algo_name_vs_state_map}
+
+    def load_state(self, state: Dict):
+        algo_name_vs_state_map = state['algo_name_vs_state_map']
+        if algo_name_vs_state_map:
+            for builder in self.child_builders:
+                algo_name = builder._registered_name.replace('_', ' ')
+                if algo_name in algo_name_vs_state_map:
+                    builder.load_state(algo_name_vs_state_map[algo_name])
 
     def build_controller(self, model: ModelType) -> 'PTCompositeCompressionAlgorithmController':
         """

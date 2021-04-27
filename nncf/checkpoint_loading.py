@@ -44,8 +44,6 @@ def load_state(model: torch.nn.Module, state_dict_to_load: dict, is_resume: bool
     :return: The number of state_dict_to_load entries successfully matched and loaded into model.
     """
 
-    if 'state_dict' in state_dict_to_load:
-        state_dict_to_load = state_dict_to_load['state_dict']
     model_state_dict = model.state_dict()
 
     key_matcher = KeyMatcher(is_resume, state_dict_to_load, model_state_dict)

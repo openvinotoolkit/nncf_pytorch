@@ -226,6 +226,12 @@ class PTCompressionAlgorithmBuilder(CompressionAlgorithmBuilder):
         self._handle_frozen_layers(target_model)
         return layout
 
+    def get_state(self) -> Dict:
+        return {}
+
+    def load_state(self, state) -> Dict:
+        pass
+
     def _get_transformation_layout(self, target_model: NNCFNetwork) -> PTTransformationLayout:
         raise NotImplementedError()
 

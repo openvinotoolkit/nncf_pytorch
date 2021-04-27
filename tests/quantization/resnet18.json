@@ -1,0 +1,1061 @@
+{
+    "quantization_points": {
+        "1": {
+            "insertion_point": {
+                "ia_op_exec_context": "ResNet/Sequential[layer4]/BasicBlock[1]/ReLU[relu]/RELU_1",
+                "input_port_id": null,
+                "target_type": {
+                    "name": "OPERATOR_POST_HOOK"
+                }
+            },
+            "qconfig": {
+                "mode": "symmetric",
+                "num_bits": 8,
+                "per_channel": true,
+                "signedness_to_force": null
+            },
+            "scopes_of_directly_quantized_operators": [
+                "ResNet/AdaptiveAvgPool2d[avgpool]"
+            ]
+        },
+        "2": {
+            "insertion_point": {
+                "ia_op_exec_context": "ResNet/AdaptiveAvgPool2d[avgpool]/adaptive_avg_pool2d_0",
+                "input_port_id": null,
+                "target_type": {
+                    "name": "OPERATOR_POST_HOOK"
+                }
+            },
+            "qconfig": {
+                "mode": "asymmetric",
+                "num_bits": 8,
+                "per_channel": false,
+                "signedness_to_force": null
+            },
+            "scopes_of_directly_quantized_operators": [
+                "ResNet/NNCFLinear[fc]"
+            ]
+        },
+        "3": {
+            "insertion_point": {
+                "ia_op_exec_context": "/nncf_model_input_0",
+                "input_port_id": null,
+                "target_type": {
+                    "name": "OPERATOR_POST_HOOK"
+                }
+            },
+            "qconfig": {
+                "mode": "asymmetric",
+                "num_bits": 8,
+                "per_channel": false,
+                "signedness_to_force": null
+            },
+            "scopes_of_directly_quantized_operators": [
+                "ResNet/NNCFConv2d[conv1]"
+            ]
+        },
+        "5": {
+            "insertion_point": {
+                "ia_op_exec_context": "ResNet/Sequential[layer1]/BasicBlock[0]/ReLU[relu]/RELU_0",
+                "input_port_id": null,
+                "target_type": {
+                    "name": "OPERATOR_POST_HOOK"
+                }
+            },
+            "qconfig": {
+                "mode": "asymmetric",
+                "num_bits": 8,
+                "per_channel": false,
+                "signedness_to_force": null
+            },
+            "scopes_of_directly_quantized_operators": [
+                "ResNet/Sequential[layer1]/BasicBlock[0]/NNCFConv2d[conv2]"
+            ]
+        },
+        "7": {
+            "insertion_point": {
+                "ia_op_exec_context": "ResNet/Sequential[layer1]/BasicBlock[0]/BatchNorm2d[bn2]/batch_norm_0",
+                "input_port_id": null,
+                "target_type": {
+                    "name": "OPERATOR_POST_HOOK"
+                }
+            },
+            "qconfig": {
+                "mode": "asymmetric",
+                "num_bits": 8,
+                "per_channel": false,
+                "signedness_to_force": null
+            },
+            "scopes_of_directly_quantized_operators": [
+                "ResNet/Sequential[layer1]/BasicBlock[0]"
+            ]
+        },
+        "9": {
+            "insertion_point": {
+                "ia_op_exec_context": "ResNet/Sequential[layer1]/BasicBlock[1]/ReLU[relu]/RELU_0",
+                "input_port_id": null,
+                "target_type": {
+                    "name": "OPERATOR_POST_HOOK"
+                }
+            },
+            "qconfig": {
+                "mode": "asymmetric",
+                "num_bits": 8,
+                "per_channel": false,
+                "signedness_to_force": null
+            },
+            "scopes_of_directly_quantized_operators": [
+                "ResNet/Sequential[layer1]/BasicBlock[1]/NNCFConv2d[conv2]"
+            ]
+        },
+        "11": {
+            "insertion_point": {
+                "ia_op_exec_context": "ResNet/Sequential[layer1]/BasicBlock[1]/BatchNorm2d[bn2]/batch_norm_0",
+                "input_port_id": null,
+                "target_type": {
+                    "name": "OPERATOR_POST_HOOK"
+                }
+            },
+            "qconfig": {
+                "mode": "asymmetric",
+                "num_bits": 8,
+                "per_channel": false,
+                "signedness_to_force": null
+            },
+            "scopes_of_directly_quantized_operators": [
+                "ResNet/Sequential[layer1]/BasicBlock[1]"
+            ]
+        },
+        "14": {
+            "insertion_point": {
+                "ia_op_exec_context": "ResNet/Sequential[layer2]/BasicBlock[0]/ReLU[relu]/RELU_0",
+                "input_port_id": null,
+                "target_type": {
+                    "name": "OPERATOR_POST_HOOK"
+                }
+            },
+            "qconfig": {
+                "mode": "asymmetric",
+                "num_bits": 8,
+                "per_channel": false,
+                "signedness_to_force": null
+            },
+            "scopes_of_directly_quantized_operators": [
+                "ResNet/Sequential[layer2]/BasicBlock[0]/NNCFConv2d[conv2]"
+            ]
+        },
+        "15": {
+            "insertion_point": {
+                "ia_op_exec_context": "ResNet/Sequential[layer2]/BasicBlock[0]/BatchNorm2d[bn2]/batch_norm_0",
+                "input_port_id": null,
+                "target_type": {
+                    "name": "OPERATOR_POST_HOOK"
+                }
+            },
+            "qconfig": {
+                "mode": "asymmetric",
+                "num_bits": 8,
+                "per_channel": false,
+                "signedness_to_force": null
+            },
+            "scopes_of_directly_quantized_operators": [
+                "ResNet/Sequential[layer2]/BasicBlock[0]"
+            ]
+        },
+        "16": {
+            "insertion_point": {
+                "ia_op_exec_context": "ResNet/Sequential[layer2]/BasicBlock[0]/Sequential[downsample]/BatchNorm2d[1]/batch_norm_0",
+                "input_port_id": null,
+                "target_type": {
+                    "name": "OPERATOR_POST_HOOK"
+                }
+            },
+            "qconfig": {
+                "mode": "asymmetric",
+                "num_bits": 8,
+                "per_channel": false,
+                "signedness_to_force": null
+            },
+            "scopes_of_directly_quantized_operators": [
+                "ResNet/Sequential[layer2]/BasicBlock[0]"
+            ]
+        },
+        "18": {
+            "insertion_point": {
+                "ia_op_exec_context": "ResNet/Sequential[layer2]/BasicBlock[1]/ReLU[relu]/RELU_0",
+                "input_port_id": null,
+                "target_type": {
+                    "name": "OPERATOR_POST_HOOK"
+                }
+            },
+            "qconfig": {
+                "mode": "asymmetric",
+                "num_bits": 8,
+                "per_channel": false,
+                "signedness_to_force": null
+            },
+            "scopes_of_directly_quantized_operators": [
+                "ResNet/Sequential[layer2]/BasicBlock[1]/NNCFConv2d[conv2]"
+            ]
+        },
+        "20": {
+            "insertion_point": {
+                "ia_op_exec_context": "ResNet/Sequential[layer2]/BasicBlock[1]/BatchNorm2d[bn2]/batch_norm_0",
+                "input_port_id": null,
+                "target_type": {
+                    "name": "OPERATOR_POST_HOOK"
+                }
+            },
+            "qconfig": {
+                "mode": "asymmetric",
+                "num_bits": 8,
+                "per_channel": false,
+                "signedness_to_force": null
+            },
+            "scopes_of_directly_quantized_operators": [
+                "ResNet/Sequential[layer2]/BasicBlock[1]"
+            ]
+        },
+        "23": {
+            "insertion_point": {
+                "ia_op_exec_context": "ResNet/Sequential[layer3]/BasicBlock[0]/ReLU[relu]/RELU_0",
+                "input_port_id": null,
+                "target_type": {
+                    "name": "OPERATOR_POST_HOOK"
+                }
+            },
+            "qconfig": {
+                "mode": "asymmetric",
+                "num_bits": 8,
+                "per_channel": false,
+                "signedness_to_force": null
+            },
+            "scopes_of_directly_quantized_operators": [
+                "ResNet/Sequential[layer3]/BasicBlock[0]/NNCFConv2d[conv2]"
+            ]
+        },
+        "24": {
+            "insertion_point": {
+                "ia_op_exec_context": "ResNet/Sequential[layer3]/BasicBlock[0]/BatchNorm2d[bn2]/batch_norm_0",
+                "input_port_id": null,
+                "target_type": {
+                    "name": "OPERATOR_POST_HOOK"
+                }
+            },
+            "qconfig": {
+                "mode": "asymmetric",
+                "num_bits": 8,
+                "per_channel": false,
+                "signedness_to_force": null
+            },
+            "scopes_of_directly_quantized_operators": [
+                "ResNet/Sequential[layer3]/BasicBlock[0]"
+            ]
+        },
+        "25": {
+            "insertion_point": {
+                "ia_op_exec_context": "ResNet/Sequential[layer3]/BasicBlock[0]/Sequential[downsample]/BatchNorm2d[1]/batch_norm_0",
+                "input_port_id": null,
+                "target_type": {
+                    "name": "OPERATOR_POST_HOOK"
+                }
+            },
+            "qconfig": {
+                "mode": "asymmetric",
+                "num_bits": 8,
+                "per_channel": false,
+                "signedness_to_force": null
+            },
+            "scopes_of_directly_quantized_operators": [
+                "ResNet/Sequential[layer3]/BasicBlock[0]"
+            ]
+        },
+        "27": {
+            "insertion_point": {
+                "ia_op_exec_context": "ResNet/Sequential[layer3]/BasicBlock[1]/ReLU[relu]/RELU_0",
+                "input_port_id": null,
+                "target_type": {
+                    "name": "OPERATOR_POST_HOOK"
+                }
+            },
+            "qconfig": {
+                "mode": "asymmetric",
+                "num_bits": 8,
+                "per_channel": false,
+                "signedness_to_force": null
+            },
+            "scopes_of_directly_quantized_operators": [
+                "ResNet/Sequential[layer3]/BasicBlock[1]/NNCFConv2d[conv2]"
+            ]
+        },
+        "29": {
+            "insertion_point": {
+                "ia_op_exec_context": "ResNet/Sequential[layer3]/BasicBlock[1]/BatchNorm2d[bn2]/batch_norm_0",
+                "input_port_id": null,
+                "target_type": {
+                    "name": "OPERATOR_POST_HOOK"
+                }
+            },
+            "qconfig": {
+                "mode": "asymmetric",
+                "num_bits": 8,
+                "per_channel": false,
+                "signedness_to_force": null
+            },
+            "scopes_of_directly_quantized_operators": [
+                "ResNet/Sequential[layer3]/BasicBlock[1]"
+            ]
+        },
+        "32": {
+            "insertion_point": {
+                "ia_op_exec_context": "ResNet/Sequential[layer4]/BasicBlock[0]/ReLU[relu]/RELU_0",
+                "input_port_id": null,
+                "target_type": {
+                    "name": "OPERATOR_POST_HOOK"
+                }
+            },
+            "qconfig": {
+                "mode": "asymmetric",
+                "num_bits": 8,
+                "per_channel": false,
+                "signedness_to_force": null
+            },
+            "scopes_of_directly_quantized_operators": [
+                "ResNet/Sequential[layer4]/BasicBlock[0]/NNCFConv2d[conv2]"
+            ]
+        },
+        "33": {
+            "insertion_point": {
+                "ia_op_exec_context": "ResNet/Sequential[layer4]/BasicBlock[0]/BatchNorm2d[bn2]/batch_norm_0",
+                "input_port_id": null,
+                "target_type": {
+                    "name": "OPERATOR_POST_HOOK"
+                }
+            },
+            "qconfig": {
+                "mode": "asymmetric",
+                "num_bits": 8,
+                "per_channel": false,
+                "signedness_to_force": null
+            },
+            "scopes_of_directly_quantized_operators": [
+                "ResNet/Sequential[layer4]/BasicBlock[0]"
+            ]
+        },
+        "34": {
+            "insertion_point": {
+                "ia_op_exec_context": "ResNet/Sequential[layer4]/BasicBlock[0]/Sequential[downsample]/BatchNorm2d[1]/batch_norm_0",
+                "input_port_id": null,
+                "target_type": {
+                    "name": "OPERATOR_POST_HOOK"
+                }
+            },
+            "qconfig": {
+                "mode": "asymmetric",
+                "num_bits": 8,
+                "per_channel": false,
+                "signedness_to_force": null
+            },
+            "scopes_of_directly_quantized_operators": [
+                "ResNet/Sequential[layer4]/BasicBlock[0]"
+            ]
+        },
+        "36": {
+            "insertion_point": {
+                "ia_op_exec_context": "ResNet/Sequential[layer4]/BasicBlock[1]/ReLU[relu]/RELU_0",
+                "input_port_id": null,
+                "target_type": {
+                    "name": "OPERATOR_POST_HOOK"
+                }
+            },
+            "qconfig": {
+                "mode": "asymmetric",
+                "num_bits": 8,
+                "per_channel": false,
+                "signedness_to_force": null
+            },
+            "scopes_of_directly_quantized_operators": [
+                "ResNet/Sequential[layer4]/BasicBlock[1]/NNCFConv2d[conv2]"
+            ]
+        },
+        "38": {
+            "insertion_point": {
+                "ia_op_exec_context": "ResNet/Sequential[layer4]/BasicBlock[1]/BatchNorm2d[bn2]/batch_norm_0",
+                "input_port_id": null,
+                "target_type": {
+                    "name": "OPERATOR_POST_HOOK"
+                }
+            },
+            "qconfig": {
+                "mode": "asymmetric",
+                "num_bits": 8,
+                "per_channel": false,
+                "signedness_to_force": null
+            },
+            "scopes_of_directly_quantized_operators": [
+                "ResNet/Sequential[layer4]/BasicBlock[1]"
+            ]
+        },
+        "40": {
+            "insertion_point": {
+                "ia_op_exec_context": "ResNet/ReLU[relu]/RELU_0",
+                "input_port_id": null,
+                "target_type": {
+                    "name": "OPERATOR_POST_HOOK"
+                }
+            },
+            "qconfig": {
+                "mode": "asymmetric",
+                "num_bits": 8,
+                "per_channel": false,
+                "signedness_to_force": null
+            },
+            "scopes_of_directly_quantized_operators": [
+                "ResNet/Sequential[layer1]/BasicBlock[0]/NNCFConv2d[conv1]",
+                "ResNet/Sequential[layer1]/BasicBlock[0]"
+            ]
+        },
+        "41": {
+            "insertion_point": {
+                "ia_op_exec_context": "ResNet/Sequential[layer1]/BasicBlock[0]/ReLU[relu]/RELU_1",
+                "input_port_id": null,
+                "target_type": {
+                    "name": "OPERATOR_POST_HOOK"
+                }
+            },
+            "qconfig": {
+                "mode": "asymmetric",
+                "num_bits": 8,
+                "per_channel": false,
+                "signedness_to_force": null
+            },
+            "scopes_of_directly_quantized_operators": [
+                "ResNet/Sequential[layer1]/BasicBlock[1]",
+                "ResNet/Sequential[layer1]/BasicBlock[1]/NNCFConv2d[conv1]"
+            ]
+        },
+        "42": {
+            "insertion_point": {
+                "ia_op_exec_context": "ResNet/Sequential[layer1]/BasicBlock[1]/ReLU[relu]/RELU_1",
+                "input_port_id": null,
+                "target_type": {
+                    "name": "OPERATOR_POST_HOOK"
+                }
+            },
+            "qconfig": {
+                "mode": "asymmetric",
+                "num_bits": 8,
+                "per_channel": false,
+                "signedness_to_force": null
+            },
+            "scopes_of_directly_quantized_operators": [
+                "ResNet/Sequential[layer2]/BasicBlock[0]/Sequential[downsample]/NNCFConv2d[0]",
+                "ResNet/Sequential[layer2]/BasicBlock[0]/NNCFConv2d[conv1]"
+            ]
+        },
+        "43": {
+            "insertion_point": {
+                "ia_op_exec_context": "ResNet/Sequential[layer2]/BasicBlock[0]/ReLU[relu]/RELU_1",
+                "input_port_id": null,
+                "target_type": {
+                    "name": "OPERATOR_POST_HOOK"
+                }
+            },
+            "qconfig": {
+                "mode": "asymmetric",
+                "num_bits": 8,
+                "per_channel": false,
+                "signedness_to_force": null
+            },
+            "scopes_of_directly_quantized_operators": [
+                "ResNet/Sequential[layer2]/BasicBlock[1]/NNCFConv2d[conv1]",
+                "ResNet/Sequential[layer2]/BasicBlock[1]"
+            ]
+        },
+        "44": {
+            "insertion_point": {
+                "ia_op_exec_context": "ResNet/Sequential[layer2]/BasicBlock[1]/ReLU[relu]/RELU_1",
+                "input_port_id": null,
+                "target_type": {
+                    "name": "OPERATOR_POST_HOOK"
+                }
+            },
+            "qconfig": {
+                "mode": "asymmetric",
+                "num_bits": 8,
+                "per_channel": false,
+                "signedness_to_force": null
+            },
+            "scopes_of_directly_quantized_operators": [
+                "ResNet/Sequential[layer3]/BasicBlock[0]/NNCFConv2d[conv1]",
+                "ResNet/Sequential[layer3]/BasicBlock[0]/Sequential[downsample]/NNCFConv2d[0]"
+            ]
+        },
+        "45": {
+            "insertion_point": {
+                "ia_op_exec_context": "ResNet/Sequential[layer3]/BasicBlock[0]/ReLU[relu]/RELU_1",
+                "input_port_id": null,
+                "target_type": {
+                    "name": "OPERATOR_POST_HOOK"
+                }
+            },
+            "qconfig": {
+                "mode": "asymmetric",
+                "num_bits": 8,
+                "per_channel": false,
+                "signedness_to_force": null
+            },
+            "scopes_of_directly_quantized_operators": [
+                "ResNet/Sequential[layer3]/BasicBlock[1]",
+                "ResNet/Sequential[layer3]/BasicBlock[1]/NNCFConv2d[conv1]"
+            ]
+        },
+        "46": {
+            "insertion_point": {
+                "ia_op_exec_context": "ResNet/Sequential[layer3]/BasicBlock[1]/ReLU[relu]/RELU_1",
+                "input_port_id": null,
+                "target_type": {
+                    "name": "OPERATOR_POST_HOOK"
+                }
+            },
+            "qconfig": {
+                "mode": "asymmetric",
+                "num_bits": 8,
+                "per_channel": false,
+                "signedness_to_force": null
+            },
+            "scopes_of_directly_quantized_operators": [
+                "ResNet/Sequential[layer4]/BasicBlock[0]/NNCFConv2d[conv1]",
+                "ResNet/Sequential[layer4]/BasicBlock[0]/Sequential[downsample]/NNCFConv2d[0]"
+            ]
+        },
+        "47": {
+            "insertion_point": {
+                "ia_op_exec_context": "ResNet/Sequential[layer4]/BasicBlock[0]/ReLU[relu]/RELU_1",
+                "input_port_id": null,
+                "target_type": {
+                    "name": "OPERATOR_POST_HOOK"
+                }
+            },
+            "qconfig": {
+                "mode": "asymmetric",
+                "num_bits": 8,
+                "per_channel": false,
+                "signedness_to_force": null
+            },
+            "scopes_of_directly_quantized_operators": [
+                "ResNet/Sequential[layer4]/BasicBlock[1]/NNCFConv2d[conv1]",
+                "ResNet/Sequential[layer4]/BasicBlock[1]"
+            ]
+        },
+        "49": {
+            "insertion_point": {
+                "input_port_id": null,
+                "module_scope": "ResNet/NNCFConv2d[conv1]",
+                "target_type": {
+                    "name": "OPERATION_WITH_WEIGHTS"
+                }
+            },
+            "qconfig": {
+                "mode": "symmetric",
+                "num_bits": 8,
+                "per_channel": true,
+                "signedness_to_force": null
+            },
+            "scopes_of_directly_quantized_operators": [
+                "ResNet/NNCFConv2d[conv1]"
+            ]
+        },
+        "50": {
+            "insertion_point": {
+                "input_port_id": null,
+                "module_scope": "ResNet/Sequential[layer1]/BasicBlock[0]/NNCFConv2d[conv1]",
+                "target_type": {
+                    "name": "OPERATION_WITH_WEIGHTS"
+                }
+            },
+            "qconfig": {
+                "mode": "symmetric",
+                "num_bits": 8,
+                "per_channel": true,
+                "signedness_to_force": null
+            },
+            "scopes_of_directly_quantized_operators": [
+                "ResNet/Sequential[layer1]/BasicBlock[0]/NNCFConv2d[conv1]"
+            ]
+        },
+        "51": {
+            "insertion_point": {
+                "input_port_id": null,
+                "module_scope": "ResNet/Sequential[layer1]/BasicBlock[0]/NNCFConv2d[conv2]",
+                "target_type": {
+                    "name": "OPERATION_WITH_WEIGHTS"
+                }
+            },
+            "qconfig": {
+                "mode": "symmetric",
+                "num_bits": 8,
+                "per_channel": true,
+                "signedness_to_force": null
+            },
+            "scopes_of_directly_quantized_operators": [
+                "ResNet/Sequential[layer1]/BasicBlock[0]/NNCFConv2d[conv2]"
+            ]
+        },
+        "52": {
+            "insertion_point": {
+                "input_port_id": null,
+                "module_scope": "ResNet/Sequential[layer1]/BasicBlock[1]/NNCFConv2d[conv1]",
+                "target_type": {
+                    "name": "OPERATION_WITH_WEIGHTS"
+                }
+            },
+            "qconfig": {
+                "mode": "symmetric",
+                "num_bits": 8,
+                "per_channel": true,
+                "signedness_to_force": null
+            },
+            "scopes_of_directly_quantized_operators": [
+                "ResNet/Sequential[layer1]/BasicBlock[1]/NNCFConv2d[conv1]"
+            ]
+        },
+        "53": {
+            "insertion_point": {
+                "input_port_id": null,
+                "module_scope": "ResNet/Sequential[layer1]/BasicBlock[1]/NNCFConv2d[conv2]",
+                "target_type": {
+                    "name": "OPERATION_WITH_WEIGHTS"
+                }
+            },
+            "qconfig": {
+                "mode": "symmetric",
+                "num_bits": 8,
+                "per_channel": true,
+                "signedness_to_force": null
+            },
+            "scopes_of_directly_quantized_operators": [
+                "ResNet/Sequential[layer1]/BasicBlock[1]/NNCFConv2d[conv2]"
+            ]
+        },
+        "54": {
+            "insertion_point": {
+                "input_port_id": null,
+                "module_scope": "ResNet/Sequential[layer2]/BasicBlock[0]/NNCFConv2d[conv1]",
+                "target_type": {
+                    "name": "OPERATION_WITH_WEIGHTS"
+                }
+            },
+            "qconfig": {
+                "mode": "symmetric",
+                "num_bits": 8,
+                "per_channel": true,
+                "signedness_to_force": null
+            },
+            "scopes_of_directly_quantized_operators": [
+                "ResNet/Sequential[layer2]/BasicBlock[0]/NNCFConv2d[conv1]"
+            ]
+        },
+        "55": {
+            "insertion_point": {
+                "input_port_id": null,
+                "module_scope": "ResNet/Sequential[layer2]/BasicBlock[0]/NNCFConv2d[conv2]",
+                "target_type": {
+                    "name": "OPERATION_WITH_WEIGHTS"
+                }
+            },
+            "qconfig": {
+                "mode": "symmetric",
+                "num_bits": 8,
+                "per_channel": true,
+                "signedness_to_force": null
+            },
+            "scopes_of_directly_quantized_operators": [
+                "ResNet/Sequential[layer2]/BasicBlock[0]/NNCFConv2d[conv2]"
+            ]
+        },
+        "56": {
+            "insertion_point": {
+                "input_port_id": null,
+                "module_scope": "ResNet/Sequential[layer2]/BasicBlock[0]/Sequential[downsample]/NNCFConv2d[0]",
+                "target_type": {
+                    "name": "OPERATION_WITH_WEIGHTS"
+                }
+            },
+            "qconfig": {
+                "mode": "symmetric",
+                "num_bits": 8,
+                "per_channel": true,
+                "signedness_to_force": null
+            },
+            "scopes_of_directly_quantized_operators": [
+                "ResNet/Sequential[layer2]/BasicBlock[0]/Sequential[downsample]/NNCFConv2d[0]"
+            ]
+        },
+        "57": {
+            "insertion_point": {
+                "input_port_id": null,
+                "module_scope": "ResNet/Sequential[layer2]/BasicBlock[1]/NNCFConv2d[conv1]",
+                "target_type": {
+                    "name": "OPERATION_WITH_WEIGHTS"
+                }
+            },
+            "qconfig": {
+                "mode": "symmetric",
+                "num_bits": 8,
+                "per_channel": true,
+                "signedness_to_force": null
+            },
+            "scopes_of_directly_quantized_operators": [
+                "ResNet/Sequential[layer2]/BasicBlock[1]/NNCFConv2d[conv1]"
+            ]
+        },
+        "58": {
+            "insertion_point": {
+                "input_port_id": null,
+                "module_scope": "ResNet/Sequential[layer2]/BasicBlock[1]/NNCFConv2d[conv2]",
+                "target_type": {
+                    "name": "OPERATION_WITH_WEIGHTS"
+                }
+            },
+            "qconfig": {
+                "mode": "symmetric",
+                "num_bits": 8,
+                "per_channel": true,
+                "signedness_to_force": null
+            },
+            "scopes_of_directly_quantized_operators": [
+                "ResNet/Sequential[layer2]/BasicBlock[1]/NNCFConv2d[conv2]"
+            ]
+        },
+        "59": {
+            "insertion_point": {
+                "input_port_id": null,
+                "module_scope": "ResNet/Sequential[layer3]/BasicBlock[0]/NNCFConv2d[conv1]",
+                "target_type": {
+                    "name": "OPERATION_WITH_WEIGHTS"
+                }
+            },
+            "qconfig": {
+                "mode": "symmetric",
+                "num_bits": 8,
+                "per_channel": true,
+                "signedness_to_force": null
+            },
+            "scopes_of_directly_quantized_operators": [
+                "ResNet/Sequential[layer3]/BasicBlock[0]/NNCFConv2d[conv1]"
+            ]
+        },
+        "60": {
+            "insertion_point": {
+                "input_port_id": null,
+                "module_scope": "ResNet/Sequential[layer3]/BasicBlock[0]/NNCFConv2d[conv2]",
+                "target_type": {
+                    "name": "OPERATION_WITH_WEIGHTS"
+                }
+            },
+            "qconfig": {
+                "mode": "symmetric",
+                "num_bits": 8,
+                "per_channel": true,
+                "signedness_to_force": null
+            },
+            "scopes_of_directly_quantized_operators": [
+                "ResNet/Sequential[layer3]/BasicBlock[0]/NNCFConv2d[conv2]"
+            ]
+        },
+        "61": {
+            "insertion_point": {
+                "input_port_id": null,
+                "module_scope": "ResNet/Sequential[layer3]/BasicBlock[0]/Sequential[downsample]/NNCFConv2d[0]",
+                "target_type": {
+                    "name": "OPERATION_WITH_WEIGHTS"
+                }
+            },
+            "qconfig": {
+                "mode": "symmetric",
+                "num_bits": 8,
+                "per_channel": true,
+                "signedness_to_force": null
+            },
+            "scopes_of_directly_quantized_operators": [
+                "ResNet/Sequential[layer3]/BasicBlock[0]/Sequential[downsample]/NNCFConv2d[0]"
+            ]
+        },
+        "62": {
+            "insertion_point": {
+                "input_port_id": null,
+                "module_scope": "ResNet/Sequential[layer3]/BasicBlock[1]/NNCFConv2d[conv1]",
+                "target_type": {
+                    "name": "OPERATION_WITH_WEIGHTS"
+                }
+            },
+            "qconfig": {
+                "mode": "symmetric",
+                "num_bits": 8,
+                "per_channel": true,
+                "signedness_to_force": null
+            },
+            "scopes_of_directly_quantized_operators": [
+                "ResNet/Sequential[layer3]/BasicBlock[1]/NNCFConv2d[conv1]"
+            ]
+        },
+        "63": {
+            "insertion_point": {
+                "input_port_id": null,
+                "module_scope": "ResNet/Sequential[layer3]/BasicBlock[1]/NNCFConv2d[conv2]",
+                "target_type": {
+                    "name": "OPERATION_WITH_WEIGHTS"
+                }
+            },
+            "qconfig": {
+                "mode": "symmetric",
+                "num_bits": 8,
+                "per_channel": true,
+                "signedness_to_force": null
+            },
+            "scopes_of_directly_quantized_operators": [
+                "ResNet/Sequential[layer3]/BasicBlock[1]/NNCFConv2d[conv2]"
+            ]
+        },
+        "64": {
+            "insertion_point": {
+                "input_port_id": null,
+                "module_scope": "ResNet/Sequential[layer4]/BasicBlock[0]/NNCFConv2d[conv1]",
+                "target_type": {
+                    "name": "OPERATION_WITH_WEIGHTS"
+                }
+            },
+            "qconfig": {
+                "mode": "symmetric",
+                "num_bits": 8,
+                "per_channel": true,
+                "signedness_to_force": null
+            },
+            "scopes_of_directly_quantized_operators": [
+                "ResNet/Sequential[layer4]/BasicBlock[0]/NNCFConv2d[conv1]"
+            ]
+        },
+        "65": {
+            "insertion_point": {
+                "input_port_id": null,
+                "module_scope": "ResNet/Sequential[layer4]/BasicBlock[0]/NNCFConv2d[conv2]",
+                "target_type": {
+                    "name": "OPERATION_WITH_WEIGHTS"
+                }
+            },
+            "qconfig": {
+                "mode": "symmetric",
+                "num_bits": 8,
+                "per_channel": true,
+                "signedness_to_force": null
+            },
+            "scopes_of_directly_quantized_operators": [
+                "ResNet/Sequential[layer4]/BasicBlock[0]/NNCFConv2d[conv2]"
+            ]
+        },
+        "66": {
+            "insertion_point": {
+                "input_port_id": null,
+                "module_scope": "ResNet/Sequential[layer4]/BasicBlock[0]/Sequential[downsample]/NNCFConv2d[0]",
+                "target_type": {
+                    "name": "OPERATION_WITH_WEIGHTS"
+                }
+            },
+            "qconfig": {
+                "mode": "symmetric",
+                "num_bits": 8,
+                "per_channel": true,
+                "signedness_to_force": null
+            },
+            "scopes_of_directly_quantized_operators": [
+                "ResNet/Sequential[layer4]/BasicBlock[0]/Sequential[downsample]/NNCFConv2d[0]"
+            ]
+        },
+        "67": {
+            "insertion_point": {
+                "input_port_id": null,
+                "module_scope": "ResNet/Sequential[layer4]/BasicBlock[1]/NNCFConv2d[conv1]",
+                "target_type": {
+                    "name": "OPERATION_WITH_WEIGHTS"
+                }
+            },
+            "qconfig": {
+                "mode": "symmetric",
+                "num_bits": 8,
+                "per_channel": true,
+                "signedness_to_force": null
+            },
+            "scopes_of_directly_quantized_operators": [
+                "ResNet/Sequential[layer4]/BasicBlock[1]/NNCFConv2d[conv1]"
+            ]
+        },
+        "68": {
+            "insertion_point": {
+                "input_port_id": null,
+                "module_scope": "ResNet/Sequential[layer4]/BasicBlock[1]/NNCFConv2d[conv2]",
+                "target_type": {
+                    "name": "OPERATION_WITH_WEIGHTS"
+                }
+            },
+            "qconfig": {
+                "mode": "symmetric",
+                "num_bits": 8,
+                "per_channel": true,
+                "signedness_to_force": null
+            },
+            "scopes_of_directly_quantized_operators": [
+                "ResNet/Sequential[layer4]/BasicBlock[1]/NNCFConv2d[conv2]"
+            ]
+        },
+        "69": {
+            "insertion_point": {
+                "input_port_id": null,
+                "module_scope": "ResNet/NNCFLinear[fc]",
+                "target_type": {
+                    "name": "OPERATION_WITH_WEIGHTS"
+                }
+            },
+            "qconfig": {
+                "mode": "symmetric",
+                "num_bits": 8,
+                "per_channel": true,
+                "signedness_to_force": null
+            },
+            "scopes_of_directly_quantized_operators": [
+                "ResNet/NNCFLinear[fc]"
+            ]
+        }
+    },
+    "shared_input_operation_set_groups": {
+        "0": [
+            1
+        ],
+        "1": [
+            2,
+            69
+        ],
+        "2": [
+            49,
+            3
+        ],
+        "3": [
+            51,
+            5
+        ],
+        "4": [
+            9,
+            53
+        ],
+        "5": [
+            14,
+            55
+        ],
+        "6": [
+            16,
+            15
+        ],
+        "7": [
+            18,
+            58
+        ],
+        "8": [
+            60,
+            23
+        ],
+        "9": [
+            24,
+            25
+        ],
+        "10": [
+            27,
+            63
+        ],
+        "11": [
+            32,
+            65
+        ],
+        "12": [
+            33,
+            34
+        ],
+        "13": [
+            36,
+            68
+        ],
+        "14": [
+            40,
+            50,
+            7
+        ],
+        "15": [
+            41,
+            11,
+            52
+        ],
+        "16": [
+            56,
+            42,
+            54
+        ],
+        "17": [
+            57,
+            43,
+            20
+        ],
+        "18": [
+            59,
+            44,
+            61
+        ],
+        "19": [
+            45,
+            29,
+            62
+        ],
+        "20": [
+            64,
+            66,
+            46
+        ],
+        "21": [
+            67,
+            38,
+            47
+        ]
+    },
+    "unified_scale_groups": {
+        "0": [
+            16,
+            15
+        ],
+        "1": [
+            24,
+            25
+        ],
+        "2": [
+            33,
+            34
+        ],
+        "3": [
+            40,
+            7
+        ],
+        "4": [
+            41,
+            11
+        ],
+        "5": [
+            43,
+            20
+        ],
+        "6": [
+            29,
+            45
+        ],
+        "7": [
+            38,
+            47
+        ]
+    }
+}

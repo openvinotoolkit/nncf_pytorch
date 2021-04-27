@@ -10,6 +10,7 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 """
+from copy import deepcopy
 from typing import List
 
 import os
@@ -18,6 +19,7 @@ import pytest
 from examples.common.model_loader import load_model
 from nncf import NNCFConfig
 from nncf import register_default_init_args
+from nncf.quantization.algo import QuantizationController
 from tests.conftest import EXAMPLES_DIR
 from tests.conftest import TEST_ROOT
 from tests.helpers import BasicConvTestModel
@@ -25,6 +27,7 @@ from tests.helpers import create_compressed_model_and_algo_for_test
 from tests.helpers import create_mock_dataloader
 from tests.quantization.test_hawq_precision_init import check_bitwidth_graph
 from tests.quantization.test_quantization_helpers import get_quantization_config_without_range_init
+from tests.sparsity.rb.test_algo import get_basic_sparsity_config
 from tests.test_models.synthetic import AddTwoConv
 
 
@@ -145,74 +148,108 @@ def test_manual_single_conv(params):
         check_bitwidth_graph(ctrl, model, path_to_dot, graph_dir)
 
 
+class TestPrecisionInitDesc():
+    def __init__(self):
+        self.model_creator = AddTwoConv
+        config = get_quantization_config_without_range_init()
+        config['compression']['initializer'].update({
+            "precision": {
+                "bitwidth_per_scope":
+                    [[2, 'TargetType.OPERATION_WITH_WEIGHTS AddTwoConv/NNCFConv2d[conv1]'],
+                     [4, 'TargetType.OPERATION_WITH_WEIGHTS AddTwoConv/NNCFConv2d[conv2]']]
+            }})
+        config['target_device'] = 'TRIAL'
+        config['compression']["activations"] = {"bits": 6}
+        self.config = config
+        self.ref_bitwidth_per_scope = [
+            ('AddTwoConv/NNCFConv2d[conv1]module_weight', 2),
+            ('AddTwoConv/NNCFConv2d[conv2]module_weight', 4),
+            ('AddTwoConv/NNCFConv2d[conv2]/conv2d_0|OUTPUT', 6),
+            ('AddTwoConv/NNCFConv2d[conv1]/conv2d_0|OUTPUT', 6),
+            ('/nncf_model_input_0|OUTPUT', 6)
+        ]
+        self.ref_bitwidth_stats = [
+            ['2', '20', '0', '20'],
+            ['4', '20', '0', '20'],
+            ['6', '0', '60', '60']
+        ]
+
+    def get_config_with_all_quantization_inits(self) -> NNCFConfig:
+        config = deepcopy(self.config)
+        config['compression']['initializer'].update(
+            {
+                'range': {'num_init_samples': 1},
+                'batchnorm_adaptation': {'num_bn_adaptation_samples': 1, 'num_bn_forget_samples': 1}
+            })
+        return config
+
+    @staticmethod
+    def setup_init_spies(mocker):
+        from nncf.quantization.algo import QuantizationBuilder, QuantizationController
+        from nncf.quantization.precision_init.manual_init import ManualPrecisionInitializer
+        parse_range_init = mocker.spy(QuantizationBuilder, '_parse_range_init_params')
+        get_stats = mocker.spy(QuantizationBuilder, '_get_statistics_for_final_range_init')
+        run_bn_adapt = mocker.spy(QuantizationController, 'run_batchnorm_adaptation')
+        apply_manual_precision_init = mocker.spy(ManualPrecisionInitializer, 'apply_init')
+        return [get_stats, parse_range_init, run_bn_adapt, apply_manual_precision_init]
+
+    def check_precision_init(self, compression_ctrl: QuantizationController):
+        for key, quantizer in compression_ctrl.all_quantizations.items():
+            expected_bit = [ref_bit for (name, ref_bit) in self.ref_bitwidth_per_scope if name == str(key)][0]
+            assert quantizer.num_bits == expected_bit, 'Unexpected number of bits for {}'.format(key)
+
+        table = compression_ctrl.non_stable_metric_collectors[0].get_bits_stat()
+        # pylint: disable=protected-access
+        assert table._rows == self.ref_bitwidth_stats
+
+
 def test_quantization_configs__with_precisions_list():
-    model = AddTwoConv()
-    config = get_quantization_config_without_range_init()
-    config['compression']['initializer'].update({
-        "precision": {
-            "bitwidth_per_scope":
-                [[2, 'TargetType.OPERATION_WITH_WEIGHTS AddTwoConv/NNCFConv2d[conv1]'],
-                 [4, 'TargetType.OPERATION_WITH_WEIGHTS AddTwoConv/NNCFConv2d[conv2]']]
-        }})
-    config['target_device'] = 'TRIAL'
-    config['compression']["activations"] = {"bits": 6}
-    model, compression_ctrl = create_compressed_model_and_algo_for_test(model, config)
-
-    ref_bits = [('AddTwoConv/NNCFConv2d[conv1]module_weight', 2),
-                ('AddTwoConv/NNCFConv2d[conv2]module_weight', 4),
-                ('AddTwoConv/NNCFConv2d[conv2]/conv2d_0|OUTPUT', 6),
-                ('AddTwoConv/NNCFConv2d[conv1]/conv2d_0|OUTPUT', 6),
-                ('/nncf_model_input_0|OUTPUT', 6)]
-
-    for key, quantizer in compression_ctrl.all_quantizations.items():
-        expected_bit = [ref_bit for (name, ref_bit) in ref_bits if name == str(key)][0]
-        assert quantizer.num_bits == expected_bit, 'Unexpected number of bits for {}'.format(key)
-
-    ref_rows = [['2', '20', '0', '20'],
-                ['4', '20', '0', '20'],
-                ['6', '0', '60', '60']]
-    table = compression_ctrl.non_stable_metric_collectors[0].get_bits_stat()
-    # pylint: disable=protected-access
-    assert table._rows == ref_rows
+    desc = TestPrecisionInitDesc()
+    model = desc.model_creator()
+    config = desc.config
+    _, compression_ctrl = create_compressed_model_and_algo_for_test(model, config)
+    desc.check_precision_init(compression_ctrl)
 
 
 def test_can_resume_with_manual_init(mocker):
-    config = get_quantization_config_without_range_init()
-    config['compression']['initializer'].update({
-        'precision': {
-            'bitwidth_per_scope':
-                [[2, 'TargetType.OPERATION_WITH_WEIGHTS AddTwoConv/NNCFConv2d[conv1]'],
-                 [4, 'TargetType.OPERATION_WITH_WEIGHTS AddTwoConv/NNCFConv2d[conv2]']]
-        },
-        'range': {
-            'num_init_samples': 1
-        },
-        'batchnorm_adaptation': {
-            'num_bn_adaptation_samples': 1,
-            'num_bn_forget_samples': 1
-        },
-    })
-    config['target_device'] = 'TRIAL'
-    config['compression']["activations"] = {"bits": 6}
-
-    from nncf.quantization.algo import QuantizationBuilder, QuantizationController
-    from nncf.quantization.precision_init.manual_init import ManualPrecisionInitializer
-    parse_range_init = mocker.spy(QuantizationBuilder, '_parse_range_init_params')
-    get_stats = mocker.spy(QuantizationBuilder, '_get_statistics_for_final_range_init')
-    run_bn_adapt = mocker.spy(QuantizationController, 'run_batchnorm_adaptation')
-    apply_init = mocker.spy(ManualPrecisionInitializer, 'apply_init')
-    all_mocks = [get_stats, parse_range_init, run_bn_adapt, apply_init]
-
+    desc = TestPrecisionInitDesc()
+    config = desc.get_config_with_all_quantization_inits()
     config = register_default_init_args(config, train_loader=create_mock_dataloader(config))
+    all_spies = desc.setup_init_spies(mocker)
 
-    model, _ = create_compressed_model_and_algo_for_test(AddTwoConv(), config)
+    model, compression_ctrl = create_compressed_model_and_algo_for_test(desc.model_creator(), config)
+    desc.check_precision_init(compression_ctrl)
 
-    for m in all_mocks:
+    for m in all_spies:
         m.assert_called()
         m.reset_mock()
 
     resuming_state_dict = model.state_dict()
-    _ = create_compressed_model_and_algo_for_test(AddTwoConv(), config, resuming_state_dict=resuming_state_dict)
+    _, compression_ctrl = create_compressed_model_and_algo_for_test(desc.model_creator(), config,
+                                                                    resuming_state_dict=resuming_state_dict)
 
-    for m in all_mocks:
+    for m in all_spies:
+        m.assert_not_called()
+
+    desc.check_precision_init(compression_ctrl)
+
+
+def test_can_resume_with_algo_mixing(mocker):
+    desc = TestPrecisionInitDesc()
+    all_quantization_init_spies = desc.setup_init_spies(mocker)
+    sparsity_config = get_basic_sparsity_config()
+    sparsity_config['target_device'] = 'TRIAL'
+    config = desc.get_config_with_all_quantization_inits()
+    quantization_section = config['compression']
+    config['compression'] = [{'algorithm': 'const_sparsity'}, quantization_section]
+
+    model, compression_ctrl = create_compressed_model_and_algo_for_test(desc.model_creator(), sparsity_config)
+    resuming_state_dict = model.state_dict()
+
+    config = register_default_init_args(config, train_loader=create_mock_dataloader(config))
+    _, compression_ctrl = create_compressed_model_and_algo_for_test(desc.model_creator(), config,
+                                                                    resuming_state_dict=resuming_state_dict)
+
+    for m in all_quantization_init_spies:
         m.assert_called()
+    desc.check_precision_init(compression_ctrl.child_ctrls[1])

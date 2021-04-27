@@ -12,6 +12,7 @@
 """
 
 from typing import Any
+from typing import Dict
 
 from nncf.common.utils.ordered_enum import OrderedEnum
 
@@ -77,6 +78,13 @@ class TargetType(OrderedEnum):
     OPERATION_WITH_WEIGHTS = 5
     OPERATOR_PRE_HOOK = 6
     OPERATOR_POST_HOOK = 7
+
+    def get_state(self) -> Dict:
+        return {'name': self.name}
+
+    @classmethod
+    def from_state(cls, state: Dict) -> 'TargetType':
+        return TargetType[state['name']]
 
 
 class TransformationType(OrderedEnum):

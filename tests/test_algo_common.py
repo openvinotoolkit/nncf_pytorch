@@ -304,6 +304,10 @@ def test_load_state_interoperability(_algos, _model_wrapper, is_resume):
     config_resume['compression'] = [{'algorithm': algo} for algo in _algos['load_algos']]
     compressed_model_resume, _ = create_compressed_model_and_algo_for_test(BasicConvTestModel(),
                                                                            config_resume)
+    # WA to match all parameters on external call of load_state. User don't need to do it
+    # since it should be created from resuming checkpoint by passing it to create_compressed_model method
+    compressed_model_resume.create_builder_state_buffer(saved_model_state)
+
     model_resume = _model_wrapper['resume_model'](compressed_model_resume)
 
     if not is_resume or (is_resume and _algos['is_resume_ok']):
@@ -317,6 +321,73 @@ def test_load_state_interoperability(_algos, _model_wrapper, is_resume):
     else:
         with pytest.raises(RuntimeError):
             load_state(model_resume, saved_model_state, is_resume)
+
+
+RESUME_ALGOS = list(itertools.product([QUANTIZATION], SPARSITY_ALGOS))  # Q + 3S
+RESUME_ALGOS += [[algo] for algo in SPARSITY_ALGOS]  # 3S
+RESUME_ALGOS += [[QUANTIZATION]]  # Q
+RESUME_ALGOS += [['EMPTY']]  # No Compression
+RESUME_ALGOS = list(itertools.product(RESUME_ALGOS, RESUME_ALGOS))
+NUM_PARAMS_PER_ALGO = {
+    QUANTIZATION: 4,
+    'magnitude_sparsity': 1,
+    'const_sparsity': 1,
+    'rb_sparsity': 3,
+}
+
+@pytest.fixture(scope='module', params=RESUME_ALGOS,
+                ids=['__'.join(['save:' + '_'.join(a[0]),
+                                'load:' + '_'.join(a[1])]) for a in RESUME_ALGOS]
+                )
+def _resume_algos(request):
+    pair_algos = request.param
+    save_algos = pair_algos[0]
+    load_algos = pair_algos[1]
+    resume_ok = True
+
+    sparsity_on_save = set(SPARSITY_ALGOS).intersection(save_algos)
+    sparsity_on_load = set(SPARSITY_ALGOS).intersection(load_algos)
+    no_intersection = set(save_algos).intersection(set(load_algos))
+    has_empty = 'EMPTY' in save_algos or 'EMPTY' in load_algos
+    if no_intersection and not(sparsity_on_save and sparsity_on_load) and not has_empty:
+        resume_ok = False
+
+    return {
+        'save_algos': save_algos,
+        'load_algos': load_algos,
+        'is_resume_ok': resume_ok
+    }
+
+def test_load_state__with_resume_checkpoint(_resume_algos, _model_wrapper, mocker):
+    config_save = get_empty_config()
+    config_save['compression'] = [{'algorithm': algo} for algo in _resume_algos['save_algos'] if algo != 'EMPTY']
+    orig_model = BasicConvTestModel()
+    num_model_params = len(orig_model.state_dict())
+    compressed_model_save, _ = create_compressed_model_and_algo_for_test(orig_model, config_save)
+    model_save = _model_wrapper['save_model'](compressed_model_save)
+    saved_model_state = model_save.state_dict()
+    ref_num_loaded = len(saved_model_state)
+
+    config_resume = get_empty_config()
+    config_resume['compression'] = [{'algorithm': algo} for algo in _resume_algos['load_algos'] if algo != 'EMPTY']
+    from nncf.checkpoint_loading import KeyMatcher
+    key_matcher_run_spy = mocker.spy(KeyMatcher, 'run')
+
+    # TODO: quantization init should happen - QuantizationBuilder.__init__ with should_init=True
+    if _resume_algos['is_resume_ok']:
+        compressed_model_resume, _ = create_compressed_model_and_algo_for_test(BasicConvTestModel(),
+                                                                               config_resume,
+                                                                               resuming_state_dict=saved_model_state)
+
+        key_matcher_run_spy.assert_called_once()
+        act_num_loaded = len(key_matcher_run_spy.spy_return)
+
+        assert act_num_loaded == ref_num_loaded
+    else:
+        with pytest.raises(RuntimeError):
+            create_compressed_model_and_algo_for_test(BasicConvTestModel(),
+                                                      config_resume,
+                                                      resuming_state_dict=saved_model_state)
 
 
 LIST_ALGOS = [None, QUANTIZATION]

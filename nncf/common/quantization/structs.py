@@ -89,6 +89,16 @@ class QuantizerConfig:
                self.signedness_to_force == other_qconfig.signedness_to_force and \
                self.mode == other_qconfig.mode
 
+    def get_state(self) -> Dict:
+        return {'num_bits': self.num_bits,
+                'mode': self.mode,
+                'signedness_to_force': self.signedness_to_force,
+                'per_channel': self.per_channel}
+
+    @classmethod
+    def from_state(cls, state: Dict) -> 'QuantizerConfig':
+        return cls(**state)
+
 
 class QuantizerSpec:
     """

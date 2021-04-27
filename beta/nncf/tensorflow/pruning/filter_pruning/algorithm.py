@@ -21,7 +21,7 @@ from beta.nncf.tensorflow.algorithm_selector import TF_COMPRESSION_ALGORITHMS
 from beta.nncf.tensorflow.api.compression import TFCompressionAlgorithmController
 from beta.nncf.tensorflow.graph.utils import collect_wrapped_layers
 from beta.nncf.tensorflow.graph.utils import get_layer_by_original_name
-from beta.nncf.tensorflow.graph.utils import get_original_name
+from beta.nncf.tensorflow.graph.utils import get_layer_identifier
 from beta.nncf.tensorflow.graph.utils import get_original_name_and_instance_index
 from beta.nncf.tensorflow.layers.common import GENERAL_CONV_LAYERS
 from beta.nncf.tensorflow.layers.common import LAYERS_WITH_WEIGHTS
@@ -174,7 +174,7 @@ class FilterPruningController(BasePruningAlgoController):
 
         # 3. Initialize pruning quotas
         for cluster in self._pruned_layer_groups_info.get_all_clusters():
-            self._pruning_quotas[cluster.id] = floor(self._layers_out_channels[cluster.nodes[0].layer_name]
+            self._pruning_quotas[cluster.id] = floor(self._layers_out_channels[cluster.nodes[0].key]
                                                      * self.pruning_quota)
 
     def _flops_count_init(self):
@@ -251,7 +251,7 @@ class FilterPruningController(BasePruningAlgoController):
         nncf_sorted_nodes = self._original_graph.topological_sort()
         for layer in wrapped_layers:
             nncf_node = [n for n in nncf_sorted_nodes
-                         if layer.layer.name == get_original_name(n.node_name)][0]
+                         if layer.layer.name == get_layer_identifier(n)][0]
             if nncf_node.data['output_mask'] is not None:
                 self._set_operation_masks([layer], nncf_node.data['output_mask'])
 
@@ -295,7 +295,7 @@ class FilterPruningController(BasePruningAlgoController):
         nncf_sorted_nodes = self._original_graph.topological_sort()
         for layer in wrapped_layers:
             nncf_node = [n for n in nncf_sorted_nodes
-                         if layer.layer.name == get_original_name(n.node_name)][0]
+                         if layer.layer.name == get_layer_identifier(n)][0]
             if nncf_node.data['output_mask'] is not None:
                 self._set_operation_masks([layer], nncf_node.data['output_mask'])
 
@@ -313,7 +313,7 @@ class FilterPruningController(BasePruningAlgoController):
         nncf_sorted_nodes = self._original_graph.topological_sort()
         for layer in wrapped_layers:
             nncf_node = [n for n in nncf_sorted_nodes
-                         if layer.layer.name == get_original_name(n.node_name)][0]
+                         if layer.layer.name == get_layer_identifier(n)][0]
             nncf_node.data['output_mask'] = tf.ones(get_filters_num(layer))
 
         # 1. Calculate importances for all groups of filters. Initialize masks.
@@ -342,7 +342,7 @@ class FilterPruningController(BasePruningAlgoController):
             # Update input/output shapes of pruned nodes
             group = self._pruned_layer_groups_info.get_cluster_by_id(group_id)
             for node in group.nodes:
-                tmp_out_channels[node.layer_name] -= 1
+                tmp_out_channels[node.key] -= 1
             for node_name in self._next_nodes[group_id]:
                 tmp_in_channels[node_name] -= 1
 
@@ -368,7 +368,7 @@ class FilterPruningController(BasePruningAlgoController):
                 nncf_sorted_nodes = self._original_graph.topological_sort()
                 for layer in wrapped_layers:
                     nncf_node = [n for n in nncf_sorted_nodes
-                                 if layer.layer.name == get_original_name(n.node_name)][0]
+                                 if layer.layer.name == get_layer_identifier(n)][0]
                     if nncf_node.data['output_mask'] is not None:
                         self._set_operation_masks([layer], nncf_node.data['output_mask'])
                 return
@@ -427,7 +427,7 @@ class FilterPruningController(BasePruningAlgoController):
         :return a list of filter importance scores
         """
         group_layers = [get_layer_by_original_name(model=self._model,
-                                                   name=get_original_name(node.key))
+                                                   name=node.layer_name)
                         for node in group.nodes]
         group_filters_num = tf.constant([get_filters_num(layer) for layer in group_layers])
         filters_num = group_filters_num[0]
@@ -437,7 +437,7 @@ class FilterPruningController(BasePruningAlgoController):
         # Calculate cumulative importance for all filters in this group
         shared_nodes = []
         for minfo in group.nodes:
-            layer_name = get_original_name(minfo.layer_name)
+            layer_name = minfo.layer_name
             if layer_name in shared_nodes:
                 continue
             nncf_node = self._original_graph.get_node_by_id(minfo.nncf_node_id)

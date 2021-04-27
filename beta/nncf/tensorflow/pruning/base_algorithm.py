@@ -50,8 +50,9 @@ from nncf.common.utils.logger import logger as nncf_logger
 
 
 class PrunedLayerInfo:
-    def __init__(self, node_name: str, node_id: int):
+    def __init__(self, node_name: str, layer_name, node_id: int):
         self.node_name = node_name
+        self.layer_name = layer_name
         self.nncf_node_id = node_id
         self.key = self.node_name
 
@@ -121,7 +122,7 @@ class BasePruningAlgoBuilder(TFCompressionAlgorithmBuilder):
             for node in group.nodes:
                 layer_name = get_layer_identifier(node)
                 layer = model.get_layer(layer_name)
-                group_minfos.append(PrunedLayerInfo(node.node_name, node.node_id))
+                group_minfos.append(PrunedLayerInfo(node.node_name, layer_name, node.node_id))
 
                 # Add output_mask to nodes to run mask_propagation
                 # and detect spec_nodes that will be pruned.

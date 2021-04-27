@@ -18,7 +18,6 @@ from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Tuple
-from typing import Union
 
 from nncf.common.graph.graph import NNCFGraph
 from nncf.common.graph.graph import NNCFNode
@@ -193,10 +192,6 @@ def get_previous_conv(graph: NNCFGraph, nncf_node: NNCFNode,
     return None
 
 
-def get_original_node_name(node_name: str):
-    return node_name.split('^')[0]
-
-
 def get_conv_in_out_channels(graph: NNCFGraph):
     """
     Collects the number of input and output channels for each convolution in the graph.
@@ -281,8 +276,8 @@ def count_flops_for_nodes(graph: NNCFGraph,
 
 
 def calculate_in_out_channels_in_uniformly_pruned_model(pruning_groups, pruning_rate: float,
-                                                        full_input_channels: Dict[Union[str, 'Scope'], int],
-                                                        full_output_channels: Dict[Union[str, 'Scope'], int],
+                                                        full_input_channels: Dict[str, int],
+                                                        full_output_channels: Dict[str, int],
                                                         pruning_groups_next_nodes: Dict[int, List[str]]):
     """
     Imitates filters pruning by removing `pruning_rate` percent of output filters in each pruning group

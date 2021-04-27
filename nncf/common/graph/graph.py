@@ -273,3 +273,13 @@ class NNCFGraph:
                              key=lambda edge: self._nx_graph.edges[edge][NNCFGraph.IN_PORT_NAME_EDGE_ATTR])
 
         return [self._nx_graph.edges[edge] for edge in input_edges]
+
+    def get_output_edges(self, node: NNCFNode) -> List[dict]:
+        """
+        Returns description of edge for output tensors.
+
+        :param node: Producer node.
+        :return: List of output edges for node.
+        """
+        nx_node_key = self._node_id_to_key_dict[node.node_id]
+        return [self._nx_graph.edges[edge] for edge in self._nx_graph.out_edges(nx_node_key)]

@@ -12,25 +12,27 @@
 """
 from copy import deepcopy
 from os import path as osp
-from typing import Callable, Any, Tuple, Dict
+from typing import Any
+from typing import Callable
+from typing import Dict
 from typing import List
-from typing import NamedTuple
+from typing import Tuple
 from typing import Union
 
 from torch.nn import Module
 
+from nncf.algo_selector import COMPRESSION_ALGORITHMS
 from nncf.checkpoint_loading import load_state
+from nncf.common.utils.logger import logger
 from nncf.composite_compression import PTCompositeCompressionAlgorithmBuilder
 from nncf.compression_method_api import PTCompressionAlgorithmController
 from nncf.config import NNCFConfig
 from nncf.debug import set_debug_log_dir
-from nncf.dynamic_graph.graph_tracer import create_input_infos, create_dummy_forward_fn
+from nncf.dynamic_graph.graph_tracer import create_dummy_forward_fn
+from nncf.dynamic_graph.graph_tracer import create_input_infos
 from nncf.graph.graph_builder import GraphBuilder
 from nncf.nncf_network import NNCFNetwork
 from nncf.utils import is_main_process
-from nncf.algo_selector import COMPRESSION_ALGORITHMS
-
-from nncf.common.utils.logger import logger
 
 
 def get_compression_algorithm(config):
@@ -123,12 +125,8 @@ def create_compressed_model(model: Module, config: NNCFConfig,
     is_strict = True
     should_init_per_builder = None
     if resuming_state_dict is not None:
-        compressed_model.create_builder_state_buffer(resuming_state_dict)
-        builder_state = compressed_model.get_builder_state()
-        saved_config = builder_state['config']
-        matching_result = _match_configs(config, saved_config)  # type: ConfigMatchingResult
-        is_strict = matching_result.is_strict_loading
-        should_init_per_builder = matching_result.should_init_per_algorithm
+        builder_state = compressed_model.get_builder_state(resuming_state_dict)
+        should_init_per_builder, is_strict = _match_configs(config, builder_state['config'])
 
     should_init = resuming_state_dict is None
 
@@ -168,73 +166,72 @@ def create_compressed_model(model: Module, config: NNCFConfig,
     return compression_ctrl, compressed_model
 
 
-class ConfigMatchingResult(NamedTuple):
-    should_init_per_algorithm: Dict['str', bool] = {}
-    is_strict_loading: bool = False
+# ignore init section
+def _remove_init_section(cfg: Union[Dict, List]):
+    if isinstance(cfg, dict):
+        cfg['initializer'] = {}
+    else:
+        for sub_cfg in cfg:
+            sub_cfg['initializer'] = {}
 
 
-def _match_configs(loaded_config: NNCFConfig, saved_config: NNCFConfig) -> ConfigMatchingResult:
+def _match_global_params(cfg1: Dict, cfg2: Dict):
+    is_matched = True
+    global_param_vs_default_pairs = [('target_device', 'ANY'), ('ignored_scopes', []), ('target_scopes', [])]
+    for param_name, default in global_param_vs_default_pairs:
+        if cfg1.get(param_name, default) != cfg2.get(param_name, default):
+            is_matched = False
+            break
+    return is_matched
+
+
+def _get_algo_name(cfg_):
+    SPARSITY_ALGORITHMS = ['rb_sparsity', 'magnitude_sparsity', 'const_sparsity']
+    algorithm_key = cfg_.get('algorithm')
+    if algorithm_key in SPARSITY_ALGORITHMS:
+        algorithm_key = 'sparsity'
+    return algorithm_key
+
+
+def _get_algo_configs(cfg):
+    """
+        Returns mapping of the algorithm name and its config.
+        Sparsity algorithms have unified name ('sparsity') since they are inter loadable
+        No entry for  non compression case
+    """
+
+    algo_name_vs_algo_config_map = {}
+    algo_name_vs_algo_class_map = {}
+    if isinstance(cfg, dict):
+        algo_name = _get_algo_name(cfg)
+        if algo_name:
+            algo_name_vs_algo_config_map[algo_name] = cfg
+            algo_class = get_compression_algorithm(cfg)
+            algo_name_vs_algo_class_map[algo_name] = algo_class
+    else:
+        for algo_config in cfg:
+            algo_name = _get_algo_name(algo_config)
+            if algo_name:
+                algo_name_vs_algo_config_map[algo_name] = algo_config
+                algo_class = get_compression_algorithm(algo_config)
+                algo_name_vs_algo_class_map[algo_name] = algo_class
+
+    return algo_name_vs_algo_config_map, algo_name_vs_algo_class_map
+
+
+def _match_configs(loaded_config: NNCFConfig, saved_config: NNCFConfig) -> Tuple[Dict['str', bool], bool]:
     loaded_compression_config = deepcopy(loaded_config.get('compression', {}))
     saved_compression_config = deepcopy(saved_config.get('compression', {}))
 
-    # ignore init section
-    def remove_init_section(cfg: Union[Dict, List]):
-        if isinstance(cfg, dict):
-            cfg['initializer'] = {}
-        else:
-            for sub_cfg in cfg:
-                sub_cfg['initializer'] = {}
+    _remove_init_section(saved_compression_config)
+    _remove_init_section(loaded_compression_config)
 
-    remove_init_section(saved_compression_config)
-    remove_init_section(loaded_compression_config)
-
-    def match_global_params(cfg1: Dict, cfg2: Dict):
-        is_matched = True
-        global_param_vs_default_pairs = [('target_device', 'ANY'), ('ignored_scopes', []), ('target_scopes', [])]
-        for param_name, default in global_param_vs_default_pairs:
-            if cfg1.get(param_name, default) != cfg2.get(param_name, default):
-                is_matched = False
-                break
-        return is_matched
-
-    def get_algo_configs(cfg):
-        """
-            Returns mapping of the algorithm name and its config.
-            Sparsity algorithms have unified name ('sparsity') since they are inter loadable
-            No entry for  non compression case
-        """
-        SPARSITY_ALGORITHMS = ['rb_sparsity', 'magnitude_sparsity', 'const_sparsity']
-        algo_name_vs_algo_config_map = {}
-        algo_name_vs_algo_class_map = {}
-
-        def get_algo_name(cfg_):
-            algorithm_key = cfg_.get('algorithm')
-            if algorithm_key in SPARSITY_ALGORITHMS:
-                algorithm_key = 'sparsity'
-            return algorithm_key
-
-        if isinstance(cfg, dict):
-            algo_name = get_algo_name(cfg)
-            if algo_name:
-                algo_name_vs_algo_config_map[algo_name] = cfg
-                algo_class = get_compression_algorithm(cfg)
-                algo_name_vs_algo_class_map[algo_name] = algo_class
-        else:
-            for algo_config in cfg:
-                algo_name = get_algo_name(algo_config)
-                if algo_name:
-                    algo_name_vs_algo_config_map[algo_name] = algo_config
-                    algo_class = get_compression_algorithm(algo_config)
-                    algo_name_vs_algo_class_map[algo_name] = algo_class
-
-        return algo_name_vs_algo_config_map, algo_name_vs_algo_class_map
-
-    global_params_matches = match_global_params(saved_config, loaded_config)
+    global_params_matches = _match_global_params(saved_config, loaded_config)
     if not global_params_matches:
         raise RuntimeError('Global parameters for the given config and for the config from checkpoint do not match: ')
 
-    saved_algo_configs, _ = get_algo_configs(saved_compression_config)
-    loaded_algo_configs, algo_name_vs_algo_config_map = get_algo_configs(loaded_compression_config)
+    saved_algo_configs, _ = _get_algo_configs(saved_compression_config)
+    loaded_algo_configs, algo_name_vs_algo_config_map = _get_algo_configs(loaded_compression_config)
 
     is_strict_loading = len(saved_algo_configs) == len(loaded_algo_configs)
 
@@ -248,13 +245,13 @@ def _match_configs(loaded_config: NNCFConfig, saved_config: NNCFConfig) -> Confi
         # sparsity + quantization -> empty                      - OK        -  no init
         # empty                   ->  quantization              - OK        -  init quantization
         # empty                   ->  sparsity + quantization   - OK        -  init sparsity + quantization
-        return ConfigMatchingResult(algo_class_vs_should_init_map, is_strict_loading)
+        return algo_class_vs_should_init_map, is_strict_loading
 
     at_least_one_matches = False
     for algo_name, saved_cfg in saved_algo_configs.items():
         if algo_name in loaded_algo_configs:
             # TODO: match ingored/target scopes
-            if saved_cfg != loaded_algo_configs[algo_name] and algo_name != 'inter_loadable':
+            if saved_cfg != loaded_algo_configs[algo_name] and algo_name != 'sparsity':
                 raise RuntimeError(
                     'Failed to resume algorithm {} with config different from one with which the algorithm was '
                     'originally created and saved to checkpoint'.format(algo_name))
@@ -282,4 +279,4 @@ def _match_configs(loaded_config: NNCFConfig, saved_config: NNCFConfig) -> Confi
             list(loaded_algo_configs.keys()), list(saved_algo_configs.keys()),
         ))
 
-    return ConfigMatchingResult(algo_class_vs_should_init_map, is_strict_loading)
+    return algo_class_vs_should_init_map, is_strict_loading

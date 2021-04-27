@@ -477,9 +477,15 @@ class NNCFNetwork(nn.Module, PostGraphBuildActing):
             retval = self._wrap_outputs_fn(retval)
         return retval
 
-    def get_builder_state(self) -> Dict:
-        if not hasattr(self, '_builder_state') or self._builder_state is None:
+    def get_builder_state(self, model_state_dict: Dict[str, torch.Tensor] = None) -> Dict:
+        if not hasattr(self, '_builder_state') or self._builder_state is None or model_state_dict is None:
             return {}
+        if model_state_dict:
+            builder_state_tensor = model_state_dict.get('_builder_state')
+            if builder_state_tensor is None:
+                # handle DP and DDP
+                builder_state_tensor = model_state_dict.get('module._builder_state')
+            self.register_buffer('_builder_state', builder_state_tensor)
         state_bytes = bytes(self._builder_state)
         state_str = state_bytes.decode('utf-8')
         return json.loads(state_str)
@@ -488,17 +494,6 @@ class NNCFNetwork(nn.Module, PostGraphBuildActing):
         state_str = json.dumps(builder_state_dict)
         state_bytes = state_str.encode('utf-8')
         self.register_buffer('_builder_state', torch.ByteTensor(list(state_bytes)))
-
-    def create_builder_state_buffer(self, model_state_dict: Dict[str, torch.Tensor]):
-        builder_state_tensor = model_state_dict.get('_builder_state')
-        if builder_state_tensor is None:
-            # handle DP and DDP
-            builder_state_tensor = model_state_dict.get('module._builder_state')
-        if builder_state_tensor is None:
-            # backward-compatibility with old checkpoints
-            # TODO: care about device
-            builder_state_tensor = torch.ones([1])
-        self.register_buffer('_builder_state', builder_state_tensor)
 
     def _strip_traced_tensors(self, args: Tuple, kwargs: Dict) -> Tuple[Tuple, Dict]:
         """

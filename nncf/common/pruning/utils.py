@@ -18,7 +18,6 @@ from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Tuple
-from typing import Union
 
 from nncf.common.graph.graph import NNCFGraph
 from nncf.common.graph.graph import NNCFNode
@@ -193,10 +192,6 @@ def get_previous_conv(graph: NNCFGraph, nncf_node: NNCFNode,
     return None
 
 
-def get_original_node_name(node_name: str):
-    return node_name.split('^')[0]
-
-
 def get_conv_in_out_channels(graph: NNCFGraph):
     """
     Collects the number of input and output channels for each convolution in the graph.
@@ -210,8 +205,7 @@ def get_conv_in_out_channels(graph: NNCFGraph):
     in_channels, out_channels = {}, {}
     for node in graph.get_all_nodes():
         if isinstance(node.module_attributes, ConvolutionModuleAttributes):
-            name = node.ia_op_exec_context.scope_in_model if hasattr(node, 'ia_op_exec_context') \
-                else get_original_node_name(node.node_name)
+            name = node.node_name
             if name in in_channels and name in out_channels:
                 continue
             in_channels[name] = node.module_attributes.in_channels
@@ -235,14 +229,10 @@ def get_cluster_next_nodes(graph: NNCFGraph, pruned_groups_info,
         cluster_nodes = set()
         for cluster_node in cluster.nodes:
             nncf_cluster_node = graph.get_node_by_id(cluster_node.nncf_node_id)
-            nncf_cluster_node_scope = nncf_cluster_node.ia_op_exec_context.scope_in_model \
-                if hasattr(nncf_cluster_node, 'ia_op_exec_context') \
-                else get_original_node_name(nncf_cluster_node.node_name)
-            cluster_nodes.add(nncf_cluster_node_scope)
+            cluster_nodes.add(nncf_cluster_node.node_name)
             curr_next_nodes = get_next_nodes_of_types(graph, nncf_cluster_node, prunable_types)
 
-            next_nodes_idxs = [n.ia_op_exec_context.scope_in_model if hasattr(n, 'ia_op_exec_context')
-                               else get_original_node_name(n.node_name) for n in curr_next_nodes]
+            next_nodes_idxs = [n.node_name for n in curr_next_nodes]
             next_nodes_cluster = next_nodes_cluster.union(next_nodes_idxs)
         next_nodes[cluster.id] = list(next_nodes_cluster - cluster_nodes)
     return next_nodes
@@ -272,26 +262,22 @@ def count_flops_for_nodes(graph: NNCFGraph,
     input_channels = input_channels or {}
     output_channels = output_channels or {}
     for node in graph.get_nodes_by_types(conv_op_types):
-        name = node.ia_op_exec_context.scope_in_model if hasattr(node, 'ia_op_exec_context') \
-            else get_original_node_name(node.node_name)
-        if name in flops:
-            continue
+        name = node.node_name
         num_in_channels = input_channels.get(name, node.module_attributes.in_channels)
         num_out_channels = output_channels.get(name, node.module_attributes.out_channels)
         flops[name] = 2 * np.prod(node.module_attributes.kernel_size) * \
                       num_in_channels * num_out_channels * np.prod(output_shapes[name])
 
     for node in graph.get_nodes_by_types(linear_op_types):
-        name = node.ia_op_exec_context.scope_in_model if hasattr(node, 'ia_op_exec_context') \
-            else get_original_node_name(node.node_name)
+        name = node.node_name
         flops[name] = 2 * np.prod(input_shapes[name]) * np.prod(output_shapes[name])
 
     return flops
 
 
 def calculate_in_out_channels_in_uniformly_pruned_model(pruning_groups, pruning_rate: float,
-                                                        full_input_channels: Dict[Union[str, 'Scope'], int],
-                                                        full_output_channels: Dict[Union[str, 'Scope'], int],
+                                                        full_input_channels: Dict[str, int],
+                                                        full_output_channels: Dict[str, int],
                                                         pruning_groups_next_nodes: Dict[int, List[str]]):
     """
     Imitates filters pruning by removing `pruning_rate` percent of output filters in each pruning group

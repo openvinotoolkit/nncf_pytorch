@@ -50,10 +50,11 @@ from nncf.common.utils.logger import logger as nncf_logger
 
 
 class PrunedLayerInfo:
-    def __init__(self, layer_name: str, node_id: int):
+    def __init__(self, node_name: str, layer_name, node_id: int):
+        self.node_name = node_name
         self.layer_name = layer_name
         self.nncf_node_id = node_id
-        self.key = self.layer_name
+        self.key = self.node_name
 
 
 class BasePruningAlgoBuilder(TFCompressionAlgorithmBuilder):
@@ -114,13 +115,14 @@ class BasePruningAlgoBuilder(TFCompressionAlgorithmBuilder):
         transformations = TFTransformationLayout()
         shared_layers = set()
 
-        self._pruned_layer_groups_info = Clusterization('layer_name')
+        self._pruned_layer_groups_info = Clusterization('node_name')
 
         for i, group in enumerate(groups_of_nodes_to_prune.get_all_clusters()):
             group_minfos = []
             for node in group.nodes:
                 layer_name = get_layer_identifier(node)
                 layer = model.get_layer(layer_name)
+                group_minfos.append(PrunedLayerInfo(node.node_name, layer_name, node.node_id))
 
                 # Add output_mask to nodes to run mask_propagation
                 # and detect spec_nodes that will be pruned.
@@ -139,7 +141,6 @@ class BasePruningAlgoBuilder(TFCompressionAlgorithmBuilder):
                         transformations.register(
                             self._get_insertion_command_binary_mask(layer_name, attr_name)
                         )
-                group_minfos.append(PrunedLayerInfo(layer_name, node.node_id))
 
             cluster = NodesCluster(i, group_minfos, [n.node_id for n in group.nodes])
             self._pruned_layer_groups_info.add_cluster(cluster)

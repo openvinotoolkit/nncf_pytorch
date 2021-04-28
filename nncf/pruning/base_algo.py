@@ -36,12 +36,13 @@ from nncf.pruning.export_helpers import PT_PRUNING_OPERATOR_METATYPES
 
 
 class PrunedModuleInfo:
-    def __init__(self, module_scope: Scope, module: nn.Module, operand, node_id: int):
+    def __init__(self, node_name: str, module_scope: Scope, module: nn.Module, operand, node_id: int):
+        self.node_name = node_name
         self.module_scope = module_scope
         self.module = module
         self.operand = operand
         self.nncf_node_id = node_id
-        self.key = self.module_scope
+        self.key = self.node_name
 
 
 class NodeInfo:
@@ -88,7 +89,7 @@ class BasePruningAlgoBuilder(PTCompressionAlgorithmBuilder):
 
         device = next(target_model.parameters()).device
         insertion_commands = []
-        self.pruned_module_groups_info = Clusterization('module_scope')
+        self.pruned_module_groups_info = Clusterization('node_name')
 
         for i, group in enumerate(groups_of_nodes_to_prune.get_all_clusters()):
             group_minfos = []
@@ -112,7 +113,7 @@ class BasePruningAlgoBuilder(PTCompressionAlgorithmBuilder):
                     )
                 )
 
-                minfo = PrunedModuleInfo(module_scope, module, hook, node.node_id)
+                minfo = PrunedModuleInfo(node.node_name, module_scope, module, hook, node.node_id)
                 group_minfos.append(minfo)
             cluster = NodesCluster(i, group_minfos, [n.node_id for n in group.nodes])
             self.pruned_module_groups_info.add_cluster(cluster)
@@ -258,7 +259,8 @@ class BasePruningAlgoController(PTCompressionAlgorithmController):
             drow["Filter PR"] = self.pruning_rate_for_filters(minfo)
 
             row = [drow[h] for h in header]
-            data.append(row)
+            if row not in data:
+                data.append(row)
         table.add_rows(data)
 
         stats["pruning_statistic_by_module"] = table

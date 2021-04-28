@@ -11,6 +11,7 @@
  limitations under the License.
 """
 from abc import ABC, abstractmethod
+from typing import Dict
 from typing import Optional, TypeVar
 
 from nncf.api.compression import CompressionAlgorithmBuilder
@@ -55,6 +56,12 @@ class TFCompressionAlgorithmBuilder(CompressionAlgorithmBuilder):
     Determines which modifications should be made to the original model in
     order to enable algorithm-specific compression during fine-tuning.
     """
+
+    def get_state(self) -> Dict:
+        return {}
+
+    def load_state(self, state):
+        pass
 
     def apply_to(self, model: ModelType) -> ModelType:
         """

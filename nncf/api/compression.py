@@ -297,3 +297,15 @@ class CompressionAlgorithmBuilder(ABC):
         :return: The instance of the `TransformationLayout` class containing
             a list of algorithm-specific modifications.
         """
+
+    @abstractmethod
+    def get_state(self) -> Dict:
+        """
+        Returns JSON-compatible dictionary that represents compression setup
+        """
+
+    @abstractmethod
+    def load_state(self, state):
+        """
+        # TODO:
+        """

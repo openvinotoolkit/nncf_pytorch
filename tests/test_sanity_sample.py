@@ -316,6 +316,7 @@ def test_trained_model_eval(config, tmp_path, multiprocessing_distributed, case_
         "--log-dir": tmp_path,
         "--batch-size": config["batch_size"] * NUM_DEVICES,
         "--workers": 0,  # Workaround for the PyTorch MultiProcessingDataLoader issue
+        # TODO: compression won't be loaded!!!
         "--weights": ckpt_path,
         "--dist-url": "tcp://127.0.0.1:8987"
     }

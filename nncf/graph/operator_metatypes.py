@@ -442,7 +442,7 @@ class MaxUnpool3dMetatype(OperatorMetatype):
 @OPERATOR_METATYPES.register()
 class PadMetatype(OperatorMetatype):
     name = "pad"
-    torch_nn_functional_patch_spec = PatchSpec([name], ForwardTraceOnly())
+    torch_nn_functional_patch_spec = PatchSpec([name])
 
 
 @OPERATOR_METATYPES.register()
@@ -482,16 +482,16 @@ class ARangeMetatype(OperatorMetatype):
 @OPERATOR_METATYPES.register()
 class TransposeMetatype(OperatorMetatype):
     name = "transpose"
-    torch_module_patch_spec = PatchSpec([name], ForwardTraceOnly())
-    torch_tensor_patch_spec = PatchSpec([name, "permute"], ForwardTraceOnly())
+    torch_module_patch_spec = PatchSpec([name])
+    torch_tensor_patch_spec = PatchSpec([name, "permute"])
     hw_config_names = [HWConfigOpName.TRANSPOSE]
 
 
 @OPERATOR_METATYPES.register()
 class GatherMetatype(OperatorMetatype):
     name = "gather"
-    torch_module_patch_spec = PatchSpec(["index_select", "where"], ForwardTraceOnly())
-    torch_tensor_patch_spec = PatchSpec(["index_select", "__getitem__"], ForwardTraceOnly())
+    torch_module_patch_spec = PatchSpec(["index_select", "where"])
+    torch_tensor_patch_spec = PatchSpec(["index_select", "__getitem__"])
 
 
 @OPERATOR_METATYPES.register()
@@ -503,8 +503,8 @@ class ScatterMetatype(OperatorMetatype):
 @OPERATOR_METATYPES.register()
 class ReshapeMetatype(OperatorMetatype):
     name = "reshape"
-    torch_module_patch_spec = PatchSpec(["squeeze", "flatten", "unsqueeze"], ForwardTraceOnly())
-    torch_tensor_patch_spec = PatchSpec([name, "view", "flatten", "squeeze", "unsqueeze"], ForwardTraceOnly())
+    torch_module_patch_spec = PatchSpec(["squeeze", "flatten", "unsqueeze"])
+    torch_tensor_patch_spec = PatchSpec([name, "view", "flatten", "squeeze", "unsqueeze"])
     hw_config_names = [HWConfigOpName.RESHAPE,
                        HWConfigOpName.SQUEEZE,
                        HWConfigOpName.UNSQUEEZE,
@@ -520,14 +520,14 @@ class ContiguousMetatype(OperatorMetatype):
 @OPERATOR_METATYPES.register()
 class SplitMetatype(OperatorMetatype):
     name = "split"
-    torch_tensor_patch_spec = PatchSpec([name, "chunk"], ForwardTraceOnly())
+    torch_tensor_patch_spec = PatchSpec([name, "chunk"])
     hw_config_names = [HWConfigOpName.SPLIT]
 
 
 @OPERATOR_METATYPES.register()
 class ExpandMetatype(OperatorMetatype):
     name = "expand"
-    torch_tensor_patch_spec = PatchSpec([name], ForwardTraceOnly())
+    torch_tensor_patch_spec = PatchSpec([name])
 
 
 # Non-quantizable ops

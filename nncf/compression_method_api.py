@@ -17,7 +17,7 @@ This package defines the API for the NNCF compression methods so that the user c
 extend the existing algorithms.
 """
 import numpy
-from typing import List, Tuple, TypeVar, Dict
+from typing import List, Tuple, TypeVar
 
 import torch
 from torch import nn
@@ -34,6 +34,7 @@ from nncf.structures import BNAdaptationInitArgs
 from nncf.utils import should_consider_scope
 from nncf.api.compression import CompressionAlgorithmBuilder
 from nncf.api.compression import CompressionLoss
+from nncf.common.compression import StubStatistics
 
 ModelType = TypeVar('ModelType')
 
@@ -65,16 +66,16 @@ class PTCompressionLoss(nn.Module, CompressionLoss):
         """
         return self.calculate()
 
-    def statistics(self, quickly_collected_only: bool = False) -> Dict[str, object]:
+    def statistics(self, quickly_collected_only: bool = False) -> StubStatistics:
         """
-        Returns a dictionary of printable statistics.
+        Returns a `Statistics` class instance that contains compression loss statistics.
 
         :param quickly_collected_only: Enables collection of the statistics that
             don't take too much time to compute. Can be helpful for the case when
             need to keep track of statistics on each training batch/step/iteration.
-        :return: A dictionary of printable statistics.
+        :return: A `Statistics` class instance that contains compression loss statistics.
         """
-        return {}
+        return StubStatistics()
 
 
 class PTCompressionAlgorithmController(BaseCompressionAlgorithmController):
@@ -83,7 +84,6 @@ class PTCompressionAlgorithmController(BaseCompressionAlgorithmController):
     Hosts entities that are to be used during the training process, such as compression scheduler and
     compression loss."""
 
-
     def distributed(self):
         """
         Should be called when distributed training with multiple training processes
@@ -91,20 +91,6 @@ class PTCompressionAlgorithmController(BaseCompressionAlgorithmController):
         Any special preparations for the algorithm to properly support distributed training
         should be made inside this function.
         """
-
-    def statistics(self, quickly_collected_only=False):
-        """
-        Returns a dictionary of printable statistics.
-
-        :param quickly_collected_only: Enables collection the statistics that don't take
-            too much time to compute. Can be helpful for the case when need to keep track
-            statistics on each train batch/step/iteration.
-        :return: A dictionary of printable statistics.
-        """
-        stats = super().statistics(quickly_collected_only)
-        if hasattr(self._model, 'statistics'):
-            stats.update(self._model.statistics(quickly_collected_only))
-        return stats
 
     def run_batchnorm_adaptation(self, config):
         initializer_params = config.get("initializer", {})

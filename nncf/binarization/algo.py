@@ -29,6 +29,7 @@ from nncf.binarization.layers import ActivationBinarizationScaleThreshold
 from nncf.binarization.layers import BaseBinarizer
 from nncf.common.graph.transformations.commands import TargetType
 from nncf.common.graph.transformations.commands import TransformationPriority
+from nncf.common.compression import StubStatistics
 from nncf.compression_method_api import PTCompressionAlgorithmBuilder
 from nncf.compression_method_api import PTCompressionAlgorithmController
 from nncf.config import NNCFConfig
@@ -135,6 +136,9 @@ class BinarizationController(QuantizationControllerBase):
 
     def compression_level(self) -> CompressionLevel:
         return self.scheduler.compression_level()
+
+    def statistics(self, quickly_collected_only: bool = False) -> StubStatistics:
+        return StubStatistics()
 
     def _compute_and_display_flops_binarization_rate(self):
         net = self._model

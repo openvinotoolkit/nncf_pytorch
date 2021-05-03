@@ -110,7 +110,7 @@ def test_rb_sparse_target_lenet():
     class SparsityRateTestCallback(tf.keras.callbacks.Callback):
         def on_epoch_end(self, epoch, logs=None):
             target = compress_algo.loss.target_sparsity_rate
-            actual = compress_algo.raw_statistics()['sparsity_rate_for_sparsified_modules']
+            actual = compress_algo.statistics().model_statistics.sparsity_level_for_layers
             print(f'target {target}, actual {actual}')
             if epoch <= freeze_epoch:
                 assert abs(actual - target) < 0.05

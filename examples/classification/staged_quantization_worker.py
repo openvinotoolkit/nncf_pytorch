@@ -37,7 +37,8 @@ from nncf.initialization import register_default_init_args, default_criterion_fn
 from nncf.model_creation import create_compressed_model
 from nncf.quantization.algo import QuantizationController
 from nncf.utils import is_main_process
-from examples.classification.common import set_seed, load_resuming_checkpoint
+from examples.classification.common import load_resuming_checkpoint
+from examples.common.execution import set_seed
 
 
 class KDLossCalculator:

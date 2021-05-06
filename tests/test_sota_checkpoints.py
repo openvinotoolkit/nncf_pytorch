@@ -1,21 +1,25 @@
-import os
-import json
-import sys
 import csv
 import datetime
-from typing import Tuple, List, Optional
-
-import pytest
-import subprocess
+import json
+import os
 import re
 import shlex
+import subprocess
+import sys
 import sysconfig
-from prettytable import PrettyTable
 from collections import OrderedDict
-from yattag import Doc
 from pathlib import Path
-from tests.conftest import TEST_ROOT, PROJECT_ROOT
+from typing import List
+from typing import Optional
+from typing import Tuple
+
+import pytest
+from prettytable import PrettyTable
+from yattag import Doc
+
 from nncf.config import NNCFConfig
+from tests.conftest import PROJECT_ROOT
+from tests.conftest import TEST_ROOT
 
 BG_COLOR_GREEN_HEX = 'ccffcc'
 BG_COLOR_YELLOW_HEX = 'ffffcc'
@@ -433,7 +437,7 @@ class TestSotaCheckpoints:
             json.dump(self.q_dq_config(eval_test_struct.config_name_), outfile)
         if not os.path.exists(onnx_path):
             os.mkdir(onnx_path)
-        self.CMD_FORMAT_STRING = "{} examples/{sample_type}/main.py --cpu-only --config {conf} \
+        CMD_FORMAT_STRING = "{} examples/{sample_type}/main.py --cpu-only --config {conf} \
              --data {dataset}/{data_name} --to-onnx={onnx_path}"
         self.test = "openvino_eval"
         if onnx_type == "q_dq":
@@ -446,11 +450,11 @@ class TestSotaCheckpoints:
         else:
             onnx_name = str(eval_test_struct.model_name_ + ".onnx")
             nncf_config_path = eval_test_struct.config_name_
-        onnx_cmd = self.CMD_FORMAT_STRING.format(sys.executable, conf=nncf_config_path,
-                                                 dataset=sota_data_dir,
-                                                 data_name=eval_test_struct.dataset_name_,
-                                                 sample_type=eval_test_struct.sample_type_,
-                                                 onnx_path=(onnx_path / onnx_name))
+        onnx_cmd = CMD_FORMAT_STRING.format(sys.executable, conf=nncf_config_path,
+                                            dataset=sota_data_dir,
+                                            data_name=eval_test_struct.dataset_name_,
+                                            sample_type=eval_test_struct.sample_type_,
+                                            onnx_path=(onnx_path / onnx_name))
         if eval_test_struct.resume_file_:
             resume_file_path = sota_checkpoints_dir + '/' + eval_test_struct.resume_file_
             onnx_cmd += " --resume {}".format(resume_file_path)

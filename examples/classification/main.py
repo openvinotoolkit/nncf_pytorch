@@ -39,6 +39,7 @@ from examples.common.argparser import get_common_argument_parser
 from examples.common.example_logger import logger
 from examples.common.execution import ExecutionMode, get_execution_mode, \
     prepare_model_for_execution, start_worker
+from nncf.structures import ExecutionParameters
 from examples.common.model_loader import load_model
 from examples.common.optimizer import get_parameter_groups, make_optimizer
 from examples.common.sample_config import SampleConfig, create_sample_config
@@ -139,13 +140,28 @@ def main_worker(current_gpu, config: SampleConfig):
         train_dataset, val_dataset = create_datasets(config)
         train_loader, train_sampler, val_loader, init_loader = create_data_loaders(config, train_dataset, val_dataset)
 
-        def autoq_eval_fn(model, eval_loader):
-            _, top5 = validate(eval_loader, model, criterion, config)
-            return top5
+        def train_steps_fn(loader, model, optimizer, compression_ctrl, train_steps):
+            train_epoch(loader, model, criterion, train_criterion_fn, optimizer, compression_ctrl, 0, config,
+                        train_iters=train_steps, log_training_info=False)
+
+        def validate_fn(model, eval_loader, log=True):
+            top1, top5, loss = validate(eval_loader, model, criterion, config, log)
+            return top1, top5, loss
+
+        execution_params = ExecutionParameters(config.cpu_only,
+                                               config.current_gpu)
 
         nncf_config = register_default_init_args(
-            nncf_config, init_loader, criterion, train_criterion_fn,
-            autoq_eval_fn, val_loader, config.device)
+            nncf_config, init_loader,
+            train_loader=train_loader,
+            criterion=criterion,
+            criterion_fn=train_criterion_fn,
+            train_steps_fn=train_steps_fn,
+            validate_fn=validate_fn,
+            val_loader=val_loader,
+            device=config.device,
+            execution_parameters=execution_params,
+            )
 
     # create model
     model = load_model(model_name,
@@ -225,7 +241,7 @@ def train(config, compression_ctrl, model, criterion, criterion_fn, lr_scheduler
         acc1 = best_acc1
         if epoch % config.test_every_n_epochs == 0:
             # evaluate on validation set
-            acc1, _ = validate(val_loader, model, criterion, config)
+            acc1, _, _ = validate(val_loader, model, criterion, config)
 
         compression_level = compression_ctrl.compression_level()
         # remember best acc@1, considering compression level. If current acc@1 less then the best acc@1, checkpoint
@@ -378,7 +394,8 @@ def create_data_loaders(config, train_dataset, val_dataset):
     return train_loader, train_sampler, val_loader, init_loader
 
 
-def train_epoch(train_loader, model, criterion, criterion_fn, optimizer, compression_ctrl, epoch, config):
+def train_epoch(train_loader, model, criterion, criterion_fn, optimizer, compression_ctrl, epoch, config,
+                train_iters=None, log_training_info=True):
     batch_time = AverageMeter()
     data_time = AverageMeter()
     losses = AverageMeter()
@@ -386,6 +403,9 @@ def train_epoch(train_loader, model, criterion, criterion_fn, optimizer, compres
     criterion_losses = AverageMeter()
     top1 = AverageMeter()
     top5 = AverageMeter()
+
+    if train_iters is None:
+        train_iters = len(train_loader)
 
     compression_scheduler = compression_ctrl.scheduler
 
@@ -430,7 +450,7 @@ def train_epoch(train_loader, model, criterion, criterion_fn, optimizer, compres
         batch_time.update(time.time() - end)
         end = time.time()
 
-        if i % config.print_freq == 0:
+        if i % config.print_freq == 0 and log_training_info:
             logger.info(
                 '{rank}: '
                 'Epoch: [{0}][{1}/{2}] '
@@ -448,7 +468,7 @@ def train_epoch(train_loader, model, criterion, criterion_fn, optimizer, compres
                     rank='{}:'.format(config.rank) if config.multiprocessing_distributed else ''
                 ))
 
-        if is_main_process():
+        if is_main_process() and log_training_info:
             global_step = len(train_loader) * epoch
             config.tb.add_scalar("train/learning_rate", get_lr(optimizer), i + global_step)
             config.tb.add_scalar("train/criterion_loss", criterion_losses.avg, i + global_step)
@@ -461,8 +481,11 @@ def train_epoch(train_loader, model, criterion, criterion_fn, optimizer, compres
                 if isinstance(stat_value, (int, float)):
                     config.tb.add_scalar('train/statistics/{}'.format(stat_name), stat_value, i + global_step)
 
+        if i >= train_iters:
+            break
 
-def validate(val_loader, model, criterion, config):
+
+def validate(val_loader, model, criterion, config, log_validation_info=True):
     batch_time = AverageMeter()
     losses = AverageMeter()
     top1 = AverageMeter()
@@ -491,7 +514,7 @@ def validate(val_loader, model, criterion, config):
             batch_time.update(time.time() - end)
             end = time.time()
 
-            if i % config.print_freq == 0:
+            if i % config.print_freq == 0 and log_validation_info:
                 logger.info(
                     '{rank}'
                     'Test: [{0}/{1}] '
@@ -512,13 +535,14 @@ def validate(val_loader, model, criterion, config):
             config.mlflow.safe_call('log_metric', "val/top1", float(top1.avg), config.get('cur_epoch', 0))
             config.mlflow.safe_call('log_metric', "val/top5", float(top5.avg), config.get('cur_epoch', 0))
 
-        logger.info(' * Acc@1 {top1.avg:.3f} Acc@5 {top5.avg:.3f}\n'.format(top1=top1, top5=top5))
+        if log_validation_info:
+            logger.info(' * Acc@1 {top1.avg:.3f} Acc@5 {top5.avg:.3f}\n'.format(top1=top1, top5=top5))
 
         acc = top1.avg / 100
         if config.metrics_dump is not None:
             write_metrics(acc, config.metrics_dump)
 
-    return top1.avg, top5.avg
+    return top1.avg, top5.avg, losses.avg
 
 
 class AverageMeter:

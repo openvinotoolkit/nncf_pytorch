@@ -643,10 +643,13 @@ FILTER_PRUNING_SCHEMA = {
                                                      description="Number of epochs during which the pruning rate is"
                                                                  " increased from `pruning_init` to `pruning_target`"
                                                                  " value."),
-                    "weight_importance": with_attributes(_STRING,
+                    "filter_importance": with_attributes(_STRING,
                                                          description="The type of filter importance metric. Can be"
                                                                      " one of `L1`, `L2`, `geometric_median`."
                                                                      " `L2` by default."),
+                    "weight_importance": with_attributes(_STRING,
+                                                         description="The type of filter ranking across the layers."
+                                                                     " Can be one of `uniform` or `legr`."),
                     "all_weights": with_attributes(_BOOLEAN,
                                                    description="Whether to prune layers independently (choose filters"
                                                                " with the smallest importance in each layer separately)"
@@ -685,6 +688,26 @@ FILTER_PRUNING_SCHEMA = {
                                                  description="Whether to setting gradients corresponding to zeroed"
                                                              " filters to zero during training, `True` by default.",
                                                  default=True),
+                    "save_ranking_coeffs_path": with_attributes(_STRING),
+                    "load_ranking_coeffs_path": with_attributes(_STRING),
+                    "legr_params":
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "generations": with_attributes(_NUMBER,
+                                                                       description="Number of generations for evolution"
+                                                                                   "algorithm."),
+                                        "train_steps": with_attributes(_NUMBER,
+                                                                       description="Number of training steps to estimate"
+                                                                                   "pruned model accuracy."),
+                                        "max_pruning": with_attributes(_NUMBER,
+                                                                       description="Maximum possible pruning level for "
+                                                                                   "the model to train LeGR algo on it."),
+                                        "random_seed": with_attributes(_NUMBER,
+                                                                       description="Random seed for LeGR coefficients"
+                                                                                   " generation.")
+                                    }
+                                },
 
                 },
                 "additionalProperties": False,

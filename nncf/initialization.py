@@ -11,12 +11,13 @@ from torch.nn.modules.loss import _Loss
 from torch.utils.data import DataLoader
 
 from nncf.progress_bar import ProgressBar
-from nncf.structures import AutoQPrecisionInitArgs
+from nncf.structures import AutoQPrecisionInitArgs, LeGRInitArgs, DistributedCallbacksArgs
 from nncf.structures import BNAdaptationInitArgs
 from nncf.structures import QuantizationPrecisionInitArgs
 from nncf.structures import QuantizationRangeInitArgs
-from nncf.utils import is_tensor
+from nncf.utils import is_tensor, default_distributed_unwrapper, default_distributed_wrapper
 from nncf.utils import objwalk
+from nncf.common.utils.logger import logger as nncf_logger
 from contextlib import contextmanager
 
 
@@ -247,30 +248,56 @@ def default_criterion_fn(outputs: Any, target: Any, criterion: Any) -> torch.Ten
 
 
 def register_default_init_args(nncf_config: 'NNCFConfig',
-                               train_loader: torch.utils.data.DataLoader,
+                               init_loader: torch.utils.data.DataLoader,
+                               train_loader: torch.utils.data.DataLoader = None,
                                criterion: _Loss = None,
                                criterion_fn: Callable[[Any, Any, _Loss], torch.Tensor] = None,
-                               autoq_eval_fn: Callable[[torch.nn.Module, torch.utils.data.DataLoader], float] = None,
-                               autoq_eval_loader: torch.utils.data.DataLoader = None,
-                               device: str = None) -> 'NNCFConfig':
-    nncf_config.register_extra_structs([QuantizationRangeInitArgs(data_loader=train_loader,
+                               train_steps_fn: Callable[[torch.utils.data.DataLoader, torch.nn.Module,
+                                                         torch.optim.Optimizer, 'CompressionAlgorithmController',
+                                                         Optional[int]], type(None)] = None,
+                               validate_fn: Callable[[torch.nn.Module, torch.utils.data.DataLoader],
+                                                     Tuple[float, float, float]] = None,
+                               val_loader: torch.utils.data.DataLoader = None,
+                               device: str = None,
+                               distributed_callbacks: Tuple[Callable, Callable] = None,
+                               execution_parameters: 'ExecutionParameters' = None,
+                               legr_train_optimizer: torch.optim.Optimizer = None) -> 'NNCFConfig':
+
+    nncf_config.register_extra_structs([QuantizationRangeInitArgs(data_loader=init_loader,
                                                                   device=device),
-                                        BNAdaptationInitArgs(data_loader=train_loader,
-                                                             device=device)])
+                                        BNAdaptationInitArgs(data_loader=init_loader,
+                                                             device=device),
+
+                                        ])
+    if train_loader and train_steps_fn and val_loader and validate_fn:
+        nncf_config.register_extra_structs([LeGRInitArgs(
+            train_loader=train_loader,
+            train_fn=train_steps_fn,
+            val_loader=val_loader,
+            val_fn=partial(validate_fn, log=False),
+            train_optimizer=legr_train_optimizer,
+            nncf_config=nncf_config,
+        )])
 
     if criterion:
         if not criterion_fn:
             criterion_fn = default_criterion_fn
         nncf_config.register_extra_structs([QuantizationPrecisionInitArgs(criterion_fn=criterion_fn,
                                                                           criterion=criterion,
-                                                                          data_loader=train_loader,
+                                                                          data_loader=init_loader,
                                                                           device=device)])
 
-    if autoq_eval_fn:
-        if not autoq_eval_loader:
-            autoq_eval_loader = train_loader
-        nncf_config.register_extra_structs([AutoQPrecisionInitArgs(data_loader=autoq_eval_loader,
-                                                                   eval_fn=autoq_eval_fn,
+    if validate_fn:
+        if not val_loader:
+            val_loader = init_loader
+        nncf_config.register_extra_structs([AutoQPrecisionInitArgs(data_loader=val_loader,
+                                                                   eval_fn=lambda *x: validate_fn(*x)[1],
                                                                    nncf_config=nncf_config)])
 
+    if distributed_callbacks is None:
+        if execution_parameters is None:
+            nncf_logger.info('Please, provide execution parameters for optimal model initialization')
+        distributed_callbacks = (partial(default_distributed_wrapper, execution_parameters=execution_parameters),
+                                 default_distributed_unwrapper)
+    nncf_config.register_extra_structs([DistributedCallbacksArgs(*distributed_callbacks)])
     return nncf_config

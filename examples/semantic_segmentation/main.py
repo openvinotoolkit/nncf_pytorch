@@ -491,11 +491,11 @@ def main_worker(current_gpu, config):
         criterion = get_criterion(w_class, config)
 
         def autoq_test_fn(model, eval_loader):
-            return test(model, eval_loader, criterion, color_encoding, config)
+            return 0, test(model, eval_loader, criterion, color_encoding, config), 0
 
         nncf_config = register_default_init_args(
-            nncf_config, init_loader, criterion, criterion_fn,
-            autoq_test_fn, val_loader, config.device)
+            nncf_config, init_loader, criterion=criterion, criterion_fn=criterion_fn,
+            validate_fn=autoq_test_fn, val_loader=val_loader, device=config.device)
 
     model = load_model(config.model,
                        pretrained=pretrained,
